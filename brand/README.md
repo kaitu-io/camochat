@@ -11,3 +11,5 @@ Colours come from the Moyu tokens: jade `#3FAE8C` on night `#101214` (light-back
 Wordmark lettering is Bricolage Grotesque ExtraBold (SIL OFL 1.1), converted to outlines.
 
 At sizes where the dashed **h** would close up (below roughly 24 px tall), draw it solid.
+
+`og.html` is the source of `site/og.png` (the 1200×630 social preview); the render command is in its header comment.
