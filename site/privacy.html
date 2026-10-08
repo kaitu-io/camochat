@@ -41,6 +41,11 @@
   .tldr li::before{content:"✓"; position:absolute; left:0; color:var(--jade); font-weight:800}
   footer{border-top:1px solid var(--line); padding:28px 0; color:var(--muted); font-size:14px; text-align:center}
   .back{display:inline-block; margin-top:8px}
+  .nav .lang{margin-left:auto; border:1px solid var(--line); border-radius:999px; padding:3px 12px; font-size:14px; color:var(--text)}
+  .lang-switch{font-size:14px; margin:-28px 0 32px}
+  #top,.en{scroll-margin-top:80px}
+  .en{margin-top:72px; padding-top:48px; border-top:1px solid var(--line)}
+  .en p,.en li{line-height:1.7}
 </style>
 </head>
 <body>
@@ -50,12 +55,14 @@
       <img class="mark" src="/favicon.svg" alt="" width="30" height="30">
       陈仓 CamoChat
     </a>
+    <a class="lang" href="#en" lang="en" hreflang="en">English</a>
   </div>
 </header>
 
 <main class="wrap">
-  <h1>隐私政策</h1>
+  <h1 id="top">隐私政策</h1>
   <p class="updated">生效日期：2026 年 10 月 7 日</p>
+  <p class="lang-switch"><a href="#en" lang="en" hreflang="en">English version ↓</a></p>
 
   <div class="tldr">
     <strong>一句话版本</strong>
@@ -125,6 +132,81 @@
   <p>如对本隐私政策有任何疑问，请<a href="https://github.com/kaitu-io/camochat/issues">在 GitHub 提交问题</a>。</p>
 
   <a class="back" href="/">← 返回首页</a>
+
+  <section id="en" class="en" lang="en">
+  <h1>Privacy Policy</h1>
+  <p class="updated">Effective date: October 7, 2026</p>
+  <p class="lang-switch"><a href="#top" lang="zh-CN" hreflang="zh-CN">↑ 中文版</a></p>
+
+  <div class="tldr">
+    <strong>The short version</strong>
+    <ul>
+      <li>Your keys are generated on your device and <strong>never leave it</strong>; they are never uploaded.</li>
+      <li><strong>Text messages never pass through any server</strong>: text is encrypted on your device into a block of ciphertext, which you carry into the chat app you use yourself. It goes through no server or cloud storage, and no network is used at any point.</li>
+      <li><strong>Voice, photos and videos are relayed through our storage, as ciphertext only</strong>: the app shows them as expired after 24 hours, and the cloud storage lifecycle deletes them automatically within about 1–2 days. The full source code of the relay server is public on <a href="/source">this site's source page</a>.</li>
+      <li>We <strong>do not read</strong> which app you are using, your screen, or who you are chatting with.</li>
+      <li>No account sign-up, <strong>no access to your contacts</strong>, and no collection of location or advertising identifiers.</li>
+    </ul>
+  </div>
+
+  <h2>1. What CamoChat is</h2>
+  <p>CamoChat is an end-to-end encrypted private messaging tool. A message you write in CamoChat is encrypted into a block of ciphertext, which you send into any chat app yourself via the system share sheet or copy and paste; only the person you have paired with can turn it back into readable text. CamoChat also comes with a "Decrypt with CamoChat" action extension, so you can select ciphertext in other apps and decrypt it right there. <strong>CamoChat itself does not carry text messages — it sets up no communication channel of any kind for text.</strong> Voice, photos and videos are the only exception: their ciphertext is relayed through our storage (see Section 5). This policy explains how CamoChat handles data related to you.</p>
+
+  <h2>2. What data we handle</h2>
+  <ul>
+    <li><strong>Device keys and identity</strong>: long-term keys are generated locally on your device the first time you open the app. When you pair, your public key material is <strong>handed directly to the other person in-band</strong> (through the invite code / QR code you share), without passing through any server. <strong>Your private keys always stay in your device's secure storage (Keychain / Keystore)</strong>, and we cannot read them.</li>
+    <li><strong>Encrypted text messages</strong>: the text you write is end-to-end encrypted on your device and encoded as a block of ciphertext text, which <strong>you send yourself through the chat app you use</strong> — it is not uploaded to any server or cloud storage. We neither hold the decryption keys nor ever handle this ciphertext, so <strong>we cannot read any of it</strong>.</li>
+    <li><strong>Encrypted voice, photos and videos</strong>: a voice message, photo or video you send is first encrypted on your device with a randomly generated key that is different for every file, and then the <strong>ciphertext</strong> is uploaded to our storage relay (see Section 5). That key is placed only inside the end-to-end encrypted text message, which you send to the other person through your chat app; it is <strong>never sent to our servers</strong>. So we only ever handle ciphertext and <strong>cannot read its contents</strong>.</li>
+    <li><strong>Pairing metadata</strong>: the invite code, pairing nonces, public handshake material and similar data are used to set up a secure session between two devices, and are <strong>passed in-band between you and the other person the whole way, without any server</strong>. None of this contains message plaintext or reveals your identity.</li>
+    <li><strong>Text you actively share or select</strong>: CamoChat reads only text you send into it through the system share menu, or ciphertext you <strong>actively select and hand to</strong> the "Decrypt with CamoChat" action extension; it never reads any other text field or app content. This content is <strong>processed only locally on your device, and is never uploaded or retained</strong>.</li>
+  </ul>
+
+  <h2>3. What we do not collect or read</h2>
+  <ul>
+    <li>We do not read the identity of the host app you are using, your screen, or who you are talking to.</li>
+    <li>We do not upload or request your system contacts — you add contacts yourself by pairing.</li>
+    <li>We do not collect location, do not use advertising identifiers, and do not track you across apps.</li>
+    <li>We do not ask for a phone number, an email address or any account sign-up.</li>
+  </ul>
+
+  <h2>4. Permissions</h2>
+  <ul>
+    <li><strong>Camera</strong>: used to scan the other person's QR code when pairing face to face, and to take photos or videos you choose to send. The scanning viewfinder is not saved or uploaded; photos or videos you choose to send are relayed only as ciphertext through our storage (see Section 5).</li>
+    <li><strong>Microphone</strong>: used only while you press and hold "Hold to talk" to record a voice message. The recording is encrypted on your device before it is uploaded; the server receives only ciphertext.</li>
+    <li><strong>Network</strong>: used for three things only — uploading and downloading encrypted voice, photos and videos; reading a public, signed configuration file; and downloading the installer (Android direct-download version only). Text messages and pairing do not use the network.</li>
+  </ul>
+
+  <h2>5. Data storage and retention</h2>
+  <p><strong>Text messages pass through no server and use no cloud storage</strong> — the text ciphertext stays in the chat app you used, inside the messages you sent, and we hold no copy of it. Your keys, contacts and conversation history are <strong>stored only on your own device</strong>, and you manage and delete them yourself.</p>
+  <p><strong>The storage relay for voice, photos and videos</strong> is the only server CamoChat uses, and it runs on Amazon Web Services (AWS). All it receives and retains is:</p>
+  <ul>
+    <li><strong>The encrypted file (ciphertext)</strong>, plus its size in bytes and its type (voice / photo / video — just a category number that says nothing about the content);</li>
+    <li><strong>The upload time</strong>;</li>
+    <li>As with any website or CDN, the <strong>IP address</strong> making the request passes through AWS CloudFront and AWS WAF; your IP is used only temporarily, when WAF limits upload frequency per IP to prevent abuse, and is <strong>never written to disk</strong>.</li>
+  </ul>
+  <p>What it <strong>never receives</strong>: any decryption key, the file plaintext, an account (CamoChat has no accounts), your address book or contacts, or who you are chatting with. <strong>The relay keeps no access logs</strong> — CloudFront access logging and WAF logging are both switched off, and the signing function has no permission to write logs; your IP is used only temporarily for WAF's per-IP rate limiting and is never written to disk.</p>
+  <p><strong>How long it is kept</strong>: after 24 hours the app shows the item to you as "expired"; the cloud storage deletes it automatically under a lifecycle rule (1 day), and because the storage service runs these deletions in daily batches, actual deletion happens within about 1–2 days. We do not offer extended storage — CamoChat is not a cloud drive.</p>
+  <p><strong>Public source code</strong>: the full source code of the relay server is public on <a href="/source">this site's source page</a>, so anyone can check exactly what it does.</p>
+
+  <p><strong>Configuration file and installer</strong>: both the iOS and Android versions read a public, signed configuration file, fetched from this site's addresses, with a GitHub-hosted address (GitHub Pages) as a fallback. Only the Android direct-download version downloads an installer, and only after you agree to an update; it is downloaded from this site's addresses or from the releases page on GitHub (GitHub Releases). These requests carry no account, device identifier or other personal information. Our own servers keep no access logs (see above); the GitHub-hosted addresses are operated by GitHub and are subject to GitHub's own privacy policy. Text messages still never go over the network.</p>
+
+  <h2>6. Data sharing</h2>
+  <p>We do not sell your data or use it for advertising. <strong>Text messages pass through no server</strong>, so neither we nor any third party ever come into contact with them. The ciphertext of voice, photos and videos goes through the storage relay provided by AWS (see Section 5); AWS only hosts this ciphertext as infrastructure and likewise has no access to the decryption keys. If required by law, <strong>the most we can hand over is ciphertext that has not yet expired and been deleted</strong>, along with the size, type and upload time listed above — without the keys, this ciphertext cannot be turned back into content. We never hold text messages, so we have none to provide.</p>
+
+  <h2>7. Your rights</h2>
+  <p>You can delete a paired contact, rotate your device keys or uninstall the app at any time to stop the related data from being processed. Uninstalling removes the private keys and conversation history stored locally on your device.</p>
+
+  <h2>8. Children's privacy</h2>
+  <p>CamoChat is not directed at children under 13 and does not knowingly collect their personal information.</p>
+
+  <h2>9. Changes to this policy</h2>
+  <p>If this policy is updated, we will change the effective date at the top of this page. Significant changes will be announced in the app or on our website.</p>
+
+  <h2>10. Contact us</h2>
+  <p>If you have any questions about this privacy policy, please <a href="https://github.com/kaitu-io/camochat/issues">open an issue on GitHub</a>.</p>
+
+  <a class="back" href="/">← Back to home</a>
+  </section>
 </main>
 
 <footer>
