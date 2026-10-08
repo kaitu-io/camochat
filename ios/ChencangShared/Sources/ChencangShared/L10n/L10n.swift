@@ -910,6 +910,10 @@ public enum L10n {
         NSLocalizedString("pairing_mutual_invite_delete", bundle: .module, comment: "")
     }
 
+    public static var pairingMutualInviteResolved: String {
+        NSLocalizedString("pairing_mutual_invite_resolved", bundle: .module, comment: "")
+    }
+
     public static var pairingNextAfterScan: String {
         NSLocalizedString("pairing_next_after_scan", bundle: .module, comment: "")
     }

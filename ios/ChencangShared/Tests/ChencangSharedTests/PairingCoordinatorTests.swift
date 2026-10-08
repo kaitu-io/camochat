@@ -1018,9 +1018,7 @@ final class PairingCoordinatorTests: XCTestCase {
         let myInvite = try await b.coord.startInvite(myDisplayName: "我")
         let aElsewhere = a.sameIdentityNoData()
         let acceptByA = try await aElsewhere.coord.acceptIncoming(myInvite.inviteWire, myDisplayName: "我")
-        await assertThrowsRejection(.alreadyPaired(fingerprintHex: fpA, matchedPairingId: myInvite.pairingId)) {
-            _ = try await b.coord.completeIncoming(acceptByA.headerWire)
-        }
+        // (While the contact exists this reply is refused or resolved as a mutual invite — covered elsewhere.)
 
         // Deleting the contact is the one way to re-pair. Done WITHOUT forgetPeer, so the response
         // B stored for A is left behind …
@@ -1316,6 +1314,8 @@ final class PairingCoordinatorTests: XCTestCase {
         XCTAssertEqual(IncomingRejection.ownInvite.message, L10n.pairingErrorOwnCode)
         XCTAssertEqual(IncomingRejection.notPairingWire.message, L10n.pairingErrorNotPairing)
         XCTAssertEqual(IncomingRejection.alreadyPaired(fingerprintHex: "ff").message, L10n.pairingErrorAlreadyPaired)
+        XCTAssertEqual(IncomingRejection.mutualInvite(fingerprintHex: "ff", retiredPairingId: "p").message,
+                       L10n.pairingMutualInviteResolved)
     }
 
     /// 面对面只扫二维码:发起方从未点分享/复制(邀请未标已分享),对方扫码接受后,发起方贴回对方的配对码照样完成。
@@ -1329,6 +1329,150 @@ final class PairingCoordinatorTests: XCTestCase {
 
         guard case .completed = outcome else { return XCTFail("expected completed, got \(outcome)") }
         XCTAssertNil(a.pending.record(id: invite.pairingId), "完成的配对码离开配对中")
+    }
+
+    // MARK: - Mutual invites
+
+    /// Several messages alternating both ways, each decrypted by the other side's stored session.
+    private func assertConversation(_ x: Env, _ xPeerFp: String, _ y: Env, _ yPeerFp: String,
+                                    file: StaticString = #filePath, line: UInt = #line) throws {
+        for i in 0..<3 {
+            for (from, fromPeer, to, toPeer) in [(x, xPeerFp, y, yPeerFp), (y, yPeerFp, x, xPeerFp)] {
+                let msg = Data("message \(i)".utf8)
+                let ct = try XCTUnwrap(from.sessionStore.session(fromPeer), file: file, line: line).encryptToBytes(plaintext: msg)
+                let dec = try XCTUnwrap(to.sessionStore.session(toPeer), file: file, line: line).decryptFromBytes(ciphertext: ct)
+                XCTAssertEqual(dec, msg, file: file, line: line)
+            }
+        }
+    }
+
+    /// Both tap 「+」, each pastes the OTHER's invite (each becomes the accepter of a different handshake),
+    /// then each pastes the reply the other sent back — in either order. They converge on ONE session:
+    /// the higher fingerprint's invite. The higher side completes it (replacing the session it got by
+    /// accepting), the lower side keeps its session and retires its own invite.
+    private func runMutualInvites(higherPastesFirst: Bool) async throws {
+        let a = Env(), b = Env()
+        let inviteA = try await a.coord.startInvite(myDisplayName: "alice")
+        let inviteB = try await b.coord.startInvite(myDisplayName: "bob")
+        let outA = try await a.coord.handleIncoming(inviteB.inviteWire, myDisplayName: "alice")
+        let outB = try await b.coord.handleIncoming(inviteA.inviteWire, myDisplayName: "bob")
+        let replyFromA = try XCTUnwrap(accepted(outA))
+        let replyFromB = try XCTUnwrap(accepted(outB))
+        let fpB = replyFromA.contact.fingerprintHex, fpA = replyFromB.contact.fingerprintHex
+        XCTAssertNotEqual(replyFromA.emoji, replyFromB.emoji, "two unrelated handshakes")
+
+        let (hi, hiFp, hiInvite, replyToHi) = fpA > fpB ? (a, fpA, inviteA, replyFromB) : (b, fpB, inviteB, replyFromA)
+        let (lo, loFp, loInvite, replyToLo) = fpA > fpB ? (b, fpB, inviteB, replyFromA) : (a, fpA, inviteA, replyFromB)
+        // The higher side renamed and (wrongly) marked the first emoji as matching before the reply came.
+        try await ContactsStore(sync: hi.sync).rename(contactId: loFp, to: "老周")
+        try await ContactsStore(sync: hi.sync).markVerified(contactId: loFp)
+
+        func pasteAtHi() async throws {
+            let outcome = try await hi.coord.handleIncoming(replyToHi.headerWire, myDisplayName: "")
+            let done = try XCTUnwrap(completed(outcome), "higher side completes its own invite, got \(outcome)")
+            XCTAssertEqual(done.emoji, replyToHi.emoji, "the emoji the lower side already shows")
+        }
+        func pasteAtLo() async throws {
+            let outcome = try await lo.coord.handleIncoming(replyToLo.headerWire, myDisplayName: "")
+            XCTAssertEqual(rejection(outcome), .mutualInvite(fingerprintHex: hiFp, retiredPairingId: loInvite.pairingId))
+            XCTAssertEqual(rejection(outcome)?.message, L10n.pairingMutualInviteResolved)
+            XCTAssertEqual(rejection(outcome)?.contactId, hiFp)
+        }
+        if higherPastesFirst {
+            try await pasteAtHi(); try await pasteAtLo()
+        } else {
+            try await pasteAtLo(); try await pasteAtHi()
+        }
+
+        // No invite left on either side; one contact each, showing the same emoji.
+        XCTAssertTrue(hi.pending.records.isEmpty)
+        XCTAssertTrue(lo.pending.records.isEmpty)
+        let hiContact = try XCTUnwrap(try hi.contacts().first { $0.id == loFp })
+        let loContact = try XCTUnwrap(try lo.contacts().first { $0.id == hiFp })
+        XCTAssertEqual(try hi.contacts().count, 1)
+        XCTAssertEqual(try lo.contacts().count, 1)
+        XCTAssertEqual(hiContact.emoji, loContact.emoji)
+        XCTAssertEqual(hiContact.emoji, replyToHi.emoji)
+        // Higher side: name kept, verification reset (it was for the discarded session), now the inviter,
+        // and its response to the lower side's invite is gone (it can never complete).
+        XCTAssertEqual(hiContact.displayName, "老周")
+        XCTAssertFalse(hiContact.isVerified)
+        XCTAssertNil(hiContact.acceptedInviteDigest)
+        XCTAssertNil(hi.responses.record(for: loFp))
+        // Lower side: still the accepter of the higher side's invite; its reply stays resendable.
+        XCTAssertEqual(loContact.acceptedInviteDigest, try PairingTransport.inviteDigest(hiInvite.inviteWire))
+        XCTAssertEqual(lo.responses.record(for: hiFp)?.responseWire, replyToHi.headerWire)
+
+        try assertConversation(hi, loFp, lo, hiFp)
+
+        // Nothing stale can start a second session: both replies and both invites again change nothing.
+        let hiWrites = hi.sessionStore.writes, loWrites = lo.sessionStore.writes
+        let staleAtHi = try await hi.coord.handleIncoming(replyToHi.headerWire, myDisplayName: "")
+        let staleAtLo = try await lo.coord.handleIncoming(replyToLo.headerWire, myDisplayName: "")
+        let inviteAgainAtHi = try await hi.coord.handleIncoming(loInvite.inviteWire, myDisplayName: "")
+        let inviteAgainAtLo = try await lo.coord.handleIncoming(hiInvite.inviteWire, myDisplayName: "")
+        XCTAssertEqual(rejection(staleAtHi), .noMatchingInvite)
+        XCTAssertEqual(rejection(staleAtLo), .noMatchingInvite)
+        XCTAssertEqual(rejection(inviteAgainAtHi), .alreadyPaired(fingerprintHex: loFp))
+        let again = try XCTUnwrap(accepted(inviteAgainAtLo))
+        XCTAssertEqual(again.headerWire, replyToHi.headerWire, "the stored reply, no new handshake")
+        XCTAssertEqual(hi.sessionStore.writes, hiWrites)
+        XCTAssertEqual(lo.sessionStore.writes, loWrites)
+        try assertConversation(lo, hiFp, hi, loFp)
+    }
+
+    func testMutualInvitesConvergeWhenTheHigherSidePastesFirst() async throws {
+        try await runMutualInvites(higherPastesFirst: true)
+    }
+
+    func testMutualInvitesConvergeWhenTheLowerSidePastesFirst() async throws {
+        try await runMutualInvites(higherPastesFirst: false)
+    }
+
+    /// The lower side's invite is retired before the record goes: invalidate → remove; a failed
+    /// invalidation keeps the record and propagates.
+    func testMutualInviteRetirementInvalidatesFirst() async throws {
+        let a = Env(), b = Env()
+        let inviteA = try await a.coord.startInvite(myDisplayName: "")
+        let inviteB = try await b.coord.startInvite(myDisplayName: "")
+        let replyFromA = try await a.coord.acceptIncoming(inviteB.inviteWire, myDisplayName: "")
+        let replyFromB = try await b.coord.acceptIncoming(inviteA.inviteWire, myDisplayName: "")
+        let aIsLower = replyFromB.contact.fingerprintHex < replyFromA.contact.fingerprintHex
+        let lo = aIsLower ? a : b
+        let replyToLo = aIsLower ? replyFromB : replyFromA
+        lo.keyMaterial = SpyKeyMaterial { _ in throw NSError(domain: "test.invalidate", code: 1) }
+        let coord = lo.makeCoordinator()
+        await assertThrowsAny { _ = try await coord.handleIncoming(replyToLo.headerWire, myDisplayName: "") }
+        XCTAssertEqual(lo.pending.records.count, 1, "the record whose invalidation failed stays")
+    }
+
+    /// One invite, accepted and completed: unaffected by the mutual-invite rule even while the accepter's
+    /// response is still on file.
+    func testSingleInviteFlowStillCompletesNormally() async throws {
+        let a = Env(), b = Env()
+        let invite = try await a.coord.startInvite(myDisplayName: "alice")
+        let acceptOut = try await b.coord.handleIncoming(invite.inviteWire, myDisplayName: "bob")
+        let accept = try XCTUnwrap(accepted(acceptOut))
+        let doneOut = try await a.coord.handleIncoming(accept.headerWire, myDisplayName: "alice")
+        let done = try XCTUnwrap(completed(doneOut))
+        XCTAssertEqual(done.emoji, accept.emoji)
+        try assertConversation(a, done.contact.fingerprintHex, b, accept.contact.fingerprintHex)
+    }
+
+    /// 「对方先发了他的?」: I minted and shared my invite, then pasted theirs instead; they never saw mine.
+    /// I am the accepter, they complete; my unused invite stays pending and changes nothing.
+    func testTheySentTheirsFirstPathStillWorks() async throws {
+        let a = Env(), b = Env()
+        let mine = try await b.coord.startInvite(myDisplayName: "bob")
+        try await b.coord.markInviteShared(pairingId: mine.pairingId)
+        let theirs = try await a.coord.startInvite(myDisplayName: "alice")
+        let acceptOut = try await b.coord.handleIncoming(theirs.inviteWire, myDisplayName: "bob")
+        let accept = try XCTUnwrap(accepted(acceptOut))
+        let doneOut = try await a.coord.handleIncoming(accept.headerWire, myDisplayName: "alice")
+        let done = try XCTUnwrap(completed(doneOut))
+        XCTAssertEqual(done.emoji, accept.emoji)
+        XCTAssertEqual(b.pending.records.map(\.pairingId), [mine.pairingId])
+        try assertConversation(a, done.contact.fingerprintHex, b, accept.contact.fingerprintHex)
     }
 }
 

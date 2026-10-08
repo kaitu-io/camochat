@@ -336,6 +336,7 @@
   "intake_error_pending_invite": "这条消息来自还没加完的人。先复制对方发回的那条「我已接受你的{app}邀请」，粘贴完成添加，再来解这条。",
   "pairing_mutual_invite": "你们互相发了邀请，已经用对方的那条加好了，这条可以删掉",
   "pairing_mutual_invite_delete": "删掉这条邀请",
+  "pairing_mutual_invite_resolved": "你们互相发了邀请，已经用对方的那条加好了，你这条已经删掉。记得把你发回的配对码发给对方。",
   "paste_bar_link_only": "只复制到了链接。请在聊天软件里长按这条消息，点「全选」后再复制",
   "conversations_preview_waiting_peer": "等对方完成添加",
   "conversations_preview_no_messages": "还没有消息，发一句打个招呼",

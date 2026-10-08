@@ -30,6 +30,7 @@ import app.chencang.shared.pairing.PairingCopy
 import app.chencang.shared.pairing.inband.IncomingOutcome
 import app.chencang.shared.pairing.inband.IncomingRejection
 import app.chencang.shared.pairing.inband.PairingCoordinator
+import app.chencang.shared.pairing.inband.PairingResponseRecord
 import app.chencang.shared.pairing.inband.PendingPairingRecord
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
@@ -1241,8 +1242,68 @@ class PairingWizardViewModelTest {
             startInvite = { inviteRecord("🔒mine", "p-1") },
             handleIncoming = { _, _ -> IncomingOutcome.Rejected(IncomingRejection.AlreadyPaired("fp-m")) },
             deleteInvite = { deleted += it },
+            // Their messages already decrypt here (the response went with the first one): outside the
+            // mutual-invite window.
+            pendingResponse = { null },
         )
         return vm(WizardEntry.Initiator, driver, repo = repo, intake = FakeIntake())
+    }
+
+    @Test
+    fun `inside the mutual-invite window the held invite is not offered for deletion`() = runTest {
+        val repo = CcRepository.forTest()
+        repo.upsertContact(Contact(fingerprintHex = "fp-m", username = "user-m", displayName = "M", pairedAt = 0L, acceptedInviteDigest = "d"))
+        val driver = FakePairingDriver(
+            startInvite = { inviteRecord("🔒mine", "p-1") },
+            handleIncoming = { _, _ -> IncomingOutcome.Rejected(IncomingRejection.AlreadyPaired("fp-m")) },
+            // My response to them is still on file: their reply to my invite may still arrive and pick it.
+            pendingResponse = { fp -> PairingResponseRecord(fp, "🔒reply", "d", 0L) },
+        )
+        val wizard = vm(WizardEntry.Initiator, driver, repo = repo, intake = FakeIntake())
+        wizard.start(); advanceUntilIdle()
+        wizard.errors.test {
+            wizard.submitWire("🔒theirs"); advanceUntilIdle()
+            assertThat(awaitItem()).isEqualTo(R.string.pairing_error_already_paired)
+        }
+        assertThat(wizard.inviteId.value).isEqualTo("p-1")
+    }
+
+    @Test
+    fun `mutual invites resolved for theirs release the retired invite and explain on receive`() = runTest {
+        val driver = FakePairingDriver(
+            pendingInvite = { inviteRecord("🔒mine", "p-1", lastSharedAtMillis = 5L) },
+            handleIncoming = { _, _ -> IncomingOutcome.Rejected(IncomingRejection.MutualInvite("fp-m", "p-1")) },
+        )
+        val wizard = vm(WizardEntry.ResumeInvite("p-1"), driver, intake = FakeIntake())
+        wizard.start(); advanceUntilIdle()
+        assertThat((wizard.ui.value.stage as WizardStage.Receive).waitingForPeer).isTrue()
+
+        wizard.submitWire("🔒resp"); advanceUntilIdle()
+
+        val stage = wizard.ui.value.stage as WizardStage.Receive
+        assertThat(stage.notice).isEqualTo(
+            ReceiveNotice(R.string.pairing_mutual_invite_resolved, isHint = true, contactFingerprintHex = "fp-m"),
+        )
+        assertThat(stage.waitingForPeer).isFalse()
+        assertThat(wizard.inviteId.value).isNull()
+    }
+
+    @Test
+    fun `mutual invites resolved for theirs on the invite show step move to receive`() = runTest {
+        val driver = FakePairingDriver(
+            startInvite = { inviteRecord("🔒mine", "p-1", sheetPresentedAtMillis = 5L) },
+            handleIncoming = { _, _ -> IncomingOutcome.Rejected(IncomingRejection.MutualInvite("fp-m", "p-1")) },
+        )
+        val wizard = vm(WizardEntry.Initiator, driver, intake = FakeIntake())
+        wizard.start(); advanceUntilIdle()
+        assertThat(wizard.ui.value.stage).isInstanceOf(WizardStage.Show::class.java)
+
+        wizard.submitWire("🔒resp"); advanceUntilIdle()
+
+        val stage = wizard.ui.value.stage as WizardStage.Receive
+        assertThat(stage.notice?.textRes).isEqualTo(R.string.pairing_mutual_invite_resolved)
+        assertThat(stage.notice?.contactFingerprintHex).isEqualTo("fp-m")
+        assertThat(wizard.inviteId.value).isNull()
     }
 
     @Test

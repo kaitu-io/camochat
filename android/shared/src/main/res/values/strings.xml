@@ -251,6 +251,7 @@
     <string name="pairing_mismatch_deleted">Contact deleted. Add them again.</string>
     <string name="pairing_mutual_invite">You both sent invites. You\'re already connected through theirs, so this one can be deleted</string>
     <string name="pairing_mutual_invite_delete">Delete this invite</string>
+    <string name="pairing_mutual_invite_resolved">You both sent invites. You\'re connected through theirs, so yours has been removed. Make sure they get the code you sent back.</string>
     <string name="pairing_next_after_scan">They scanned it · Next</string>
     <string name="pairing_note_hint">Only you can see this</string>
     <string name="pairing_note_placeholder">Note: who is this for?</string>

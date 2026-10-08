@@ -754,6 +754,101 @@ final class PairingWizardViewModelTests: XCTestCase {
         XCTAssertEqual(b.sessions.writes, writesBefore, "会话不动")
     }
 
+    /// 互发邀请、两边都接受了对方的,对方发回的配对码还没到:手握自己邀请的一方再贴到「已是联系人」时,
+    /// 不劝删这份邀请——它可能正是定下来要用的那份。
+    func testInsideTheMutualWindowTheHeldInviteIsNotOfferedForDeletion() async throws {
+        let a = Rig(), b = Rig()
+        let theirRecord = try await a.coordinator.startInvite(myDisplayName: "alice")
+        try await a.coordinator.markInviteShared(pairingId: theirRecord.pairingId)
+        let vm = makeVM(.initiator, b)
+        await vm.start()
+        await vm.handOffDone(faceToFace: false)
+        let accepted = try await b.coordinator.acceptIncoming(theirRecord.inviteWire, myDisplayName: "bob")
+        let theirSecond = try await a.coordinator.startInvite(myDisplayName: "alice2").inviteWire
+
+        await vm.submitWire(theirSecond)
+
+        XCTAssertEqual(notice(vm), ReceiveNotice(text: L10n.pairingErrorAlreadyPaired, isHint: true,
+                                                 contactId: accepted.contact.fingerprintHex))
+        XCTAssertNotNil(vm.inviteId)
+    }
+
+    /// 两人都点「+」、各把对方的邀请贴进自己的向导(各自变成接受方),再各自贴回对方发回的配对码:
+    /// 指纹大的一方完成自己的邀请走到核对(表情与对方一致);指纹小的一方留在接收幕,说明用的是对方那条、
+    /// 自己这条已删,向导不再持有它。一方从「配对中」恢复邀请贴回执,另一方从粘贴条带着回执进来。
+    func testMutualInvitesConvergeThroughTheWizards() async throws {
+        let a = Rig(), b = Rig()
+        let vmA = makeVM(.initiator, a), vmB = makeVM(.initiator, b)
+        await vmA.start(); await vmB.start()
+        guard case let .show(inviteA, false) = vmA.ui.stage, case let .show(inviteB, false) = vmB.ui.stage else {
+            return XCTFail("expected both invites on show")
+        }
+        let idA = try XCTUnwrap(vmA.inviteId), idB = try XCTUnwrap(vmB.inviteId)
+        await vmA.handOffDone(faceToFace: false); await vmB.handOffDone(faceToFace: false)
+        await vmA.submitWire(inviteB); await vmB.submitWire(inviteA)
+        guard case let .show(replyFromA, true) = vmA.ui.stage, case let .show(replyFromB, true) = vmB.ui.stage else {
+            return XCTFail("expected both replies on show")
+        }
+        let fpB = try XCTUnwrap(try a.sync.readContacts().first).id
+        let fpA = try XCTUnwrap(try b.sync.readContacts().first).id
+        let aIsHigher = fpA > fpB
+        let (hi, hiId, replyToHi, hiFp) = aIsHigher ? (a, idA, replyFromB, fpA) : (b, idB, replyFromA, fpB)
+        let (lo, loId, replyToLo, loFp) = aIsHigher ? (b, idB, replyFromA, fpB) : (a, idA, replyFromB, fpA)
+
+        // Higher: resumes its invite from 配对中 and pastes the reply.
+        var hiHeld: String? = hiId
+        let hiVM = makeVM(.resumeInvite(pairingId: hiId), hi, onHeld: { hiHeld = $0 })
+        await hiVM.start()
+        XCTAssertTrue(hiVM.isAwaitingPeerCode)
+        await hiVM.submitWire(replyToHi)
+        guard case let .confirm(emoji, fp, _, _) = hiVM.ui.stage else { return XCTFail("expected confirm, got \(hiVM.ui.stage)") }
+        XCTAssertEqual(fp, loFp)
+        XCTAssertEqual(emoji, try lo.sync.readContacts().first?.emoji, "both sides show the same emoji")
+        XCTAssertNil(hiVM.inviteId)
+        XCTAssertNil(hiHeld)
+
+        // Lower: the reply arrives through the paste bar while its own invite is still on record.
+        var loHeld: String? = loId
+        let loVM = makeVM(.resumeInvite(pairingId: loId), lo, onHeld: { loHeld = $0 })
+        await loVM.start()
+        await loVM.submitWire(replyToLo)
+        XCTAssertEqual(notice(loVM), ReceiveNotice(text: L10n.pairingMutualInviteResolved, isHint: true, contactId: hiFp))
+        XCTAssertNil(loVM.inviteId)
+        XCTAssertNil(loHeld)
+        XCTAssertFalse(loVM.isAwaitingPeerCode)
+
+        XCTAssertTrue(a.invites.records.isEmpty)
+        XCTAssertTrue(b.invites.records.isEmpty)
+        hi.contactsStore.reload()
+        XCTAssertEqual(hi.contactsStore.contacts.first { $0.id == loFp }?.emoji, emoji)
+    }
+
+    /// 指纹小的一方在出示幕(还握着自己那份、尚未标分享)上贴到对方发回的配对码:那份已作废,转到接收幕给说明。
+    func testMutualResolutionOnTheShowStageMovesToReceive() async throws {
+        for _ in 0..<8 { // fingerprints are random: retry until this device is the lower one
+            let a = Rig(), b = Rig()
+            let vm = makeVM(.initiator, b)
+            await vm.start()
+            guard case let .show(mine, false) = vm.ui.stage else { return XCTFail("expected show") }
+            await vm.shareSheetPresented()
+            let theirs = try await a.coordinator.startInvite(myDisplayName: "alice").inviteWire
+            let fpA = try await b.coordinator.acceptIncoming(theirs, myDisplayName: "bob").contact.fingerprintHex
+            let reply = try await a.coordinator.acceptIncoming(mine, myDisplayName: "alice")
+            let fpB = reply.contact.fingerprintHex
+            guard fpB < fpA else { continue }
+
+            await vm.submitWire(reply.headerWire)
+
+            XCTAssertEqual(notice(vm), ReceiveNotice(text: L10n.pairingMutualInviteResolved, isHint: true, contactId: fpA))
+            XCTAssertNil(vm.inviteId)
+            XCTAssertNil(vm.mutualInviteNotice)
+            XCTAssertNil(vm.actionError)
+            XCTAssertTrue(b.invites.records.isEmpty)
+            return
+        }
+        XCTFail("never drew a lower fingerprint")
+    }
+
     func testAlreadyPairedWithoutHeldInviteStaysPlain() async throws {
         let a = Rig(), b = Rig()
         let theirs = try await a.coordinator.startInvite(myDisplayName: "alice").inviteWire

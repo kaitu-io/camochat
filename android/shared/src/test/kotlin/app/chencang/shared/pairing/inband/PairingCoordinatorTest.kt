@@ -941,7 +941,7 @@ class PairingCoordinatorTest {
         val myInvite = b.coord.startInvite("我")
         val aElsewhere = a.sameIdentityNoData()
         val acceptByA = aElsewhere.coord.acceptIncoming(myInvite.inviteWire, "我")
-        assertThrows<AlreadyPairedException> { b.coord.completeIncoming(acceptByA.headerWire) }
+        // (While the contact exists this reply is refused or resolved as a mutual invite — covered elsewhere.)
 
         // Deleting the contact is the one way to re-pair. Done here WITHOUT forgetPeer, so the
         // response B stored for A is left behind …
@@ -1157,6 +1157,7 @@ class PairingCoordinatorTest {
         assertThat(IncomingRejection.SessionCiphertext.messageRes).isEqualTo(R.string.pairing_error_is_message)
         assertThat(IncomingRejection.NotPairingWire.messageRes).isEqualTo(R.string.pairing_error_not_pairing)
         assertThat(IncomingRejection.AlreadyPaired("fp").messageRes).isEqualTo(R.string.pairing_error_already_paired)
+        assertThat(IncomingRejection.MutualInvite("fp", "p").messageRes).isEqualTo(R.string.pairing_mutual_invite_resolved)
         assertThat(PairingCopy.OWN_INVITE).isEqualTo(R.string.pairing_error_own_code)
     }
 
@@ -1301,5 +1302,152 @@ class PairingCoordinatorTest {
         others.forEach { it.await() }
         assertThat(a.pending.all()).isEmpty()
         assertThat(a.contacts()).hasSize(1)
+    }
+    // ── Mutual invites ──────────────────────────────────────────────────────────────────────────
+
+    /** Several messages alternating both ways, each opened by the other side's stored session. */
+    private suspend fun assertConversation(x: TestEnv, xPeerFp: String, y: TestEnv, yPeerFp: String) {
+        repeat(3) { i ->
+            for ((from, fromPeer, to) in listOf(Triple(x, xPeerFp, y), Triple(y, yPeerFp, x))) {
+                val msg = "message $i from ${from.tag}".toByteArray()
+                assertThat(to.sessionStore.decryptFromBytesAny(from.sessionStore.encryptToBytes(fromPeer, msg)).plaintext)
+                    .isEqualTo(msg)
+            }
+        }
+    }
+
+    /**
+     * Both tap "+", each pastes the OTHER's invite (each becomes the accepter of a different
+     * handshake), then each pastes the reply the other sent back — in either order. They converge
+     * on ONE session: the higher fingerprint's invite. The higher side completes it (replacing the
+     * session it got by accepting), the lower side keeps its session and retires its own invite.
+     */
+    private fun runMutualInvites(higherPastesFirst: Boolean) = runBlocking<Unit> {
+        val a = TestEnv.create("alice")
+        val b = TestEnv.create("bob")
+        val inviteA = a.coord.startInvite("alice")
+        val inviteB = b.coord.startInvite("bob")
+        val replyFromA = (a.coord.handleIncoming(inviteB.inviteWire, "alice") as IncomingOutcome.Accepted).outcome
+        val replyFromB = (b.coord.handleIncoming(inviteA.inviteWire, "bob") as IncomingOutcome.Accepted).outcome
+        val fpB = replyFromA.contact.fingerprintHex
+        val fpA = replyFromB.contact.fingerprintHex
+        assertThat(replyFromA.emoji).isNotEqualTo(replyFromB.emoji) // two unrelated handshakes
+
+        val aHigher = fpA > fpB
+        val hi = if (aHigher) a else b
+        val lo = if (aHigher) b else a
+        val hiFp = if (aHigher) fpA else fpB
+        val loFp = if (aHigher) fpB else fpA
+        val hiInvite = if (aHigher) inviteA else inviteB
+        val loInvite = if (aHigher) inviteB else inviteA
+        val replyToHi = if (aHigher) replyFromB else replyFromA
+        val replyToLo = if (aHigher) replyFromA else replyFromB
+        // The higher side renamed and (wrongly) marked the first emoji as matching before the reply came.
+        hi.repository.renameContact(loFp, "老周")
+        hi.repository.markVerified(loFp)
+
+        suspend fun pasteAtHi() {
+            val done = (hi.coord.handleIncoming(replyToHi.headerWire, "") as IncomingOutcome.Completed).outcome
+            assertThat(done.emoji).isEqualTo(replyToHi.emoji) // the emoji the lower side already shows
+        }
+        suspend fun pasteAtLo() {
+            val rejected = lo.coord.handleIncoming(replyToLo.headerWire, "") as IncomingOutcome.Rejected
+            assertThat(rejected.reason).isEqualTo(IncomingRejection.MutualInvite(hiFp, loInvite.pairingId))
+            assertThat(rejected.reason.messageRes).isEqualTo(R.string.pairing_mutual_invite_resolved)
+            assertThat(rejected.reason.contactFingerprintHex).isEqualTo(hiFp)
+        }
+        if (higherPastesFirst) {
+            pasteAtHi(); pasteAtLo()
+        } else {
+            pasteAtLo(); pasteAtHi()
+        }
+
+        // No invite left on either side; one contact each, showing the same emoji.
+        assertThat(hi.pending.all()).isEmpty()
+        assertThat(lo.pending.all()).isEmpty()
+        val hiContact = hi.contacts().single()
+        val loContact = lo.contacts().single()
+        assertThat(hiContact.fingerprintHex).isEqualTo(loFp)
+        assertThat(loContact.fingerprintHex).isEqualTo(hiFp)
+        assertThat(hiContact.safetyEmoji).isEqualTo(loContact.safetyEmoji)
+        assertThat(hiContact.safetyEmoji).isEqualTo(replyToHi.emoji)
+        // Higher side: name kept, verification reset (it was for the discarded session), now the
+        // inviter, and its response to the lower side's invite is gone (it can never complete).
+        assertThat(hiContact.displayName).isEqualTo("老周")
+        assertThat(hiContact.verified).isFalse()
+        assertThat(hiContact.acceptedInviteDigest).isNull()
+        assertThat(hi.coord.pendingResponse(loFp)).isNull()
+        // Lower side: still the accepter of the higher side's invite; its reply stays resendable.
+        assertThat(loContact.acceptedInviteDigest).isEqualTo(PairingTransport.inviteDigest(hiInvite.inviteWire))
+        assertThat(lo.coord.pendingResponse(hiFp)?.responseWire).isEqualTo(replyToHi.headerWire)
+
+        assertConversation(hi, loFp, lo, hiFp)
+
+        // Nothing stale can start a second session: both replies and both invites again change nothing.
+        val hiWrites = hi.sessionWrites
+        val loWrites = lo.sessionWrites
+        assertThat(hi.coord.handleIncoming(replyToHi.headerWire, ""))
+            .isEqualTo(IncomingOutcome.Rejected(IncomingRejection.NoMatchingInvite))
+        assertThat(lo.coord.handleIncoming(replyToLo.headerWire, ""))
+            .isEqualTo(IncomingOutcome.Rejected(IncomingRejection.NoMatchingInvite))
+        assertThat(hi.coord.handleIncoming(loInvite.inviteWire, ""))
+            .isEqualTo(IncomingOutcome.Rejected(IncomingRejection.AlreadyPaired(loFp)))
+        val again = (lo.coord.handleIncoming(hiInvite.inviteWire, "") as IncomingOutcome.Accepted).outcome
+        assertThat(again.headerWire).isEqualTo(replyToHi.headerWire) // the stored reply, no new handshake
+        assertThat(hi.sessionWrites).isEqualTo(hiWrites)
+        assertThat(lo.sessionWrites).isEqualTo(loWrites)
+        assertConversation(lo, hiFp, hi, loFp)
+    }
+
+    @Test
+    fun mutual_invites_converge_when_the_higher_side_pastes_first() = runMutualInvites(higherPastesFirst = true)
+
+    @Test
+    fun mutual_invites_converge_when_the_lower_side_pastes_first() = runMutualInvites(higherPastesFirst = false)
+
+    /** The lower side's invite is retired invalidate-first: a failed invalidation keeps the record. */
+    @Test
+    fun mutual_invite_retirement_invalidates_first() = runBlocking<Unit> {
+        val a = TestEnv.create("alice")
+        val b = TestEnv.create("bob")
+        val inviteA = a.coord.startInvite("")
+        val inviteB = b.coord.startInvite("")
+        val replyFromA = a.coord.acceptIncoming(inviteB.inviteWire, "")
+        val replyFromB = b.coord.acceptIncoming(inviteA.inviteWire, "")
+        val aLower = replyFromB.contact.fingerprintHex < replyFromA.contact.fingerprintHex
+        val lo = (if (aLower) a else b).with(keyMaterial = { throw IOException("keystore unavailable") })
+        val replyToLo = if (aLower) replyFromB else replyFromA
+        assertThrows<IOException> { lo.coord.handleIncoming(replyToLo.headerWire, "") }
+        assertThat(lo.pending.all()).hasSize(1)
+    }
+
+    /** One invite, accepted and completed: unaffected by the mutual-invite rule. */
+    @Test
+    fun single_invite_flow_still_completes_normally() = runBlocking<Unit> {
+        val a = TestEnv.create("alice")
+        val b = TestEnv.create("bob")
+        val invite = a.coord.startInvite("alice")
+        val accept = (b.coord.handleIncoming(invite.inviteWire, "bob") as IncomingOutcome.Accepted).outcome
+        val done = (a.coord.handleIncoming(accept.headerWire, "alice") as IncomingOutcome.Completed).outcome
+        assertThat(done.emoji).isEqualTo(accept.emoji)
+        assertConversation(a, done.contact.fingerprintHex, b, accept.contact.fingerprintHex)
+    }
+
+    /**
+     * "They sent theirs first?": I minted and shared my invite, then pasted theirs instead; they never
+     * saw mine. I am the accepter, they complete; my unused invite stays pending and changes nothing.
+     */
+    @Test
+    fun they_sent_theirs_first_path_still_works() = runBlocking<Unit> {
+        val a = TestEnv.create("alice")
+        val b = TestEnv.create("bob")
+        val mine = b.coord.startInvite("bob")
+        b.coord.markInviteShared(mine.pairingId)
+        val theirs = a.coord.startInvite("alice")
+        val accept = (b.coord.handleIncoming(theirs.inviteWire, "bob") as IncomingOutcome.Accepted).outcome
+        val done = (a.coord.handleIncoming(accept.headerWire, "alice") as IncomingOutcome.Completed).outcome
+        assertThat(done.emoji).isEqualTo(accept.emoji)
+        assertThat(b.pending.all().map { it.pairingId }).containsExactly(mine.pairingId)
+        assertConversation(a, done.contact.fingerprintHex, b, accept.contact.fingerprintHex)
     }
 }

@@ -75,9 +75,13 @@ public enum IncomingRejection: Error, Equatable {
     case sessionCiphertext
     case ownInvite
     case notPairingWire
-    /// 对方已是联系人。`matchedPairingId` 只在「回执对上了我一份待完成邀请、而发件人是我接受过其邀请的联系人」
-    /// (互发邀请)时非空:那份邀请已无用,调用方可以只删它。
+    /// 对方已是联系人。`matchedPairingId` 只在「回执对上了我一份待完成邀请、而发件人是我接受过其邀请、且已在用的联系人」
+    /// (互发邀请,早已收到过对方的消息)时非空:那份邀请已无用,调用方可以只删它。
     case alreadyPaired(fingerprintHex: String, matchedPairingId: String? = nil)
+    /// 互发邀请、双方都接受了对方的那份,而按指纹定下来的是**对方的**邀请:我这边留着的会话就是对的,
+    /// 回执对上的那份我的邀请(`retiredPairingId`)已经作废删掉;对方贴我发回的配对码后会改用同一个会话。
+    /// 联系人、会话都没动。
+    case mutualInvite(fingerprintHex: String, retiredPairingId: String)
 
     public var message: String {
         switch self {
@@ -87,13 +91,16 @@ public enum IncomingRejection: Error, Equatable {
         case .ownInvite: return L10n.pairingErrorOwnCode
         case .notPairingWire: return L10n.pairingErrorNotPairing
         case .alreadyPaired: return L10n.pairingErrorAlreadyPaired
+        case .mutualInvite: return L10n.pairingMutualInviteResolved
         }
     }
 
-    /// 只有 `alreadyPaired` 非空:界面据此显示「查看联系人」。
+    /// 只有 `alreadyPaired` / `mutualInvite` 非空:界面据此显示「查看联系人」。
     public var contactId: String? {
-        if case let .alreadyPaired(fp, _) = self { return fp }
-        return nil
+        switch self {
+        case let .alreadyPaired(fp, _), let .mutualInvite(fp, _): return fp
+        default: return nil
+        }
     }
 }
 
@@ -127,6 +134,12 @@ public enum IncomingOutcome {
 /// with ``IncomingRejection/alreadyPaired(fingerprintHex:)`` and zero writes, so an in-use session, and
 /// the contact's name / verified flag / invite digest, can only be replaced after the user deletes that
 /// contact. Entrypoints are serialised, so two racing submissions cannot both pass a check.
+///
+/// The one exception is the **mutual-invite window**: both people sent an invite and each accepted the
+/// other's, so each holds half of a different handshake and neither session can work. When the reply to
+/// my invite arrives from such a contact — one created by accepting their invite, whose messages have
+/// never decrypted here (my response to them is still on file) — both sides converge on the invite of
+/// the side with the higher fingerprint (see `resolveMutualInvite`).
 ///
 /// **Process-death resumable on A.** A retains nothing secret between rounds — only the public pairing
 /// nonce in the pending record. ``completeIncoming(_:)`` reloads A's long-lived IK/SPK, so a coordinator
@@ -384,13 +397,20 @@ public final class PairingCoordinator {
         guard let (record, r) = match else { throw IncomingRejection.noMatchingInvite }
         let fp = r.peerFingerprintHex
 
-        // An existing contact's session is never replaced. This also makes a completion that already
-        // committed its contact unrepeatable, even if removing its record failed. (`r.session` is an
-        // unowned native handle that was never persisted; it frees on release.)
+        // An existing contact's session is never replaced — with one exception, the mutual-invite window
+        // below. This also makes a completion that already committed its contact unrepeatable, even if
+        // removing its record failed. (`r.session` is an unowned native handle that was never persisted;
+        // it frees on release.)
         if let existing = await contactStore.find(fingerprintHex: fp) {
-            // 互发邀请:我早已接受过对方的邀请,这份我的邀请就多余了——把它报出来。
-            throw IncomingRejection.alreadyPaired(
-                fingerprintHex: fp, matchedPairingId: existing.acceptedInviteDigest != nil ? record.pairingId : nil)
+            guard existing.acceptedInviteDigest != nil else {
+                throw IncomingRejection.alreadyPaired(fingerprintHex: fp)
+            }
+            guard responses.record(for: fp) != nil else {
+                // 互发邀请,但对方的消息早已解开过(回应记录随之清掉)= 我接受的那份在用:这份我的邀请多余,报出来。
+                throw IncomingRejection.alreadyPaired(fingerprintHex: fp, matchedPairingId: record.pairingId)
+            }
+            return try await resolveMutualInvite(
+                record: record, result: r, existing: existing, localFp: InbandPairing.localFingerprintHex(aIk))
         }
 
         // ── Commit phase: exactly one record, the first that verified.
@@ -418,6 +438,48 @@ public final class PairingCoordinator {
                                     displayName: displayName, acceptedInviteDigest: nil)
         try await contactStore.upsert(contact)
         try pending.remove(id: record.pairingId)
+        return CompleteOutcome(emoji: r.emoji, contact: contact)
+    }
+
+    /// The mutual-invite window: we each pasted the other's invite, so each side holds the accepter's half
+    /// of a DIFFERENT handshake, and now the peer's reply to my invite has arrived. The reply proves the
+    /// peer holds the accepter's half of MY invite; my response record for them is still on file, so no
+    /// message of theirs has ever decrypted here — the session I hold from accepting their invite has
+    /// never worked for them, and replacing it loses nothing they can read.
+    ///
+    /// Both sides reach this point with the same two fingerprints and pick the same handshake: the invite
+    /// of the side with the HIGHER fingerprint wins.
+    ///
+    ///  - Mine wins (local > peer): complete my invite and replace the session I got by accepting
+    ///    theirs. The contact keeps its name, takes the new safety emoji (verification is reset — the old
+    ///    emoji belonged to the discarded session), and no longer records an accepted invite; my response
+    ///    to their invite is dropped (they will never complete it: their reply here retires it on their
+    ///    side). Returns the completion like a normal round 2b.
+    ///  - Theirs wins (local < peer): keep the session I hold (it is the peer's winning handshake), retire
+    ///    the invite this reply answered (key material invalidated, record removed) and report
+    ///    ``IncomingRejection/mutualInvite(fingerprintHex:retiredPairingId:)``. My response record stays:
+    ///    the peer needs that code to finish their side.
+    private func resolveMutualInvite(
+        record: PendingPairingRecord, result r: InbandPairing.CompleteResult, existing: PairedContact, localFp: String
+    ) async throws -> CompleteOutcome {
+        let fp = r.peerFingerprintHex
+        guard localFp > fp else {
+            try keyMaterial.invalidate(record) // throws → nothing removed, the record stays
+            try pending.remove(id: record.pairingId)
+            throw IncomingRejection.mutualInvite(fingerprintHex: fp, retiredPairingId: record.pairingId)
+        }
+        try keyMaterial.invalidate(record) // throws → nothing persisted, the record stays
+        // Replaces the session from accepting their invite. Unlike a fresh completion there is no rollback
+        // if the record vanishes meanwhile: the old session is useless to the peer either way, and the
+        // reply authentically answered this invite.
+        try await sessionStore.put(r.session, peerId: fp)
+        if responses.record(for: fp) != nil { try responses.remove(fingerprintHex: fp) }
+        let contact = PairedContact(
+            fingerprintHex: fp, displayName: existing.displayName, emoji: r.emoji, deviceId: r.peerDeviceId,
+            pairedAtMillis: existing.pairedAtMillis > 0 ? existing.pairedAtMillis : now(), acceptedInviteDigest: nil
+        )
+        try await contactStore.upsert(contact)
+        if pending.record(id: record.pairingId) != nil { try pending.remove(id: record.pairingId) }
         return CompleteOutcome(emoji: r.emoji, contact: contact)
     }
 

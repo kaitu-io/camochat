@@ -384,14 +384,16 @@ class PairingWizardViewModel(
         }
     }
 
-    /** 「已是联系人」的细分 = 互发邀请（对方就是我接受过其邀请的人），给「删掉这条邀请」：
-     *  向导手握自己的邀请时删这份；没握（从粘贴条进来）时删对方回执对上的那份
-     *  （[IncomingRejection.AlreadyPaired.matchedPairingId]）。其余情形保持「已是联系人」原提示。 */
+    /** 「已是联系人」的细分 = 互发邀请（对方就是我接受过其邀请、且已在用的人——为他留的回应已随他的第一条
+     *  消息清掉），给「删掉这条邀请」：向导手握自己的邀请时删这份；没握（从粘贴条进来）时删对方回执对上的那份
+     *  （[IncomingRejection.AlreadyPaired.matchedPairingId]）。回应还留着 = 还在互发邀请的收敛窗口里，我手上的
+     *  邀请可能正是定下来要用的那份，不能劝删。其余情形保持原提示。 */
     private suspend fun rejectionNotice(reason: IncomingRejection): ReceiveNotice {
         val fp = reason.contactFingerprintHex
         if (reason is IncomingRejection.AlreadyPaired && fp != null) {
             val held = _inviteId.value
-            if (held != null) {
+            val inWindow = held != null && withContext(ioDispatcher) { pairing.pendingResponse(fp) } != null
+            if (held != null && !inWindow) {
                 val peer = repository.contacts.first().firstOrNull { it.fingerprintHex == fp }
                 if (peer?.acceptedInviteDigest != null) {
                     return ReceiveNotice(R.string.pairing_mutual_invite, isHint = true, deleteInviteId = held)
@@ -472,7 +474,17 @@ class PairingWizardViewModel(
                     setInviteId(null)
                     setStage(confirmStage(out.outcome.emoji, out.outcome.contact), 2, SHOW_FIRST)
                 }
-                is IncomingOutcome.Rejected -> reject(rejectionNotice(out.reason))
+                is IncomingOutcome.Rejected -> {
+                    val reason = out.reason
+                    if (reason is IncomingRejection.MutualInvite) {
+                        // 互发邀请、定下来用对方的：回执对上的那份我的邀请已被协调器删掉，向导不再持有它。
+                        releaseInvite(reason.retiredPairingId)
+                        val notice = rejectionNotice(reason)
+                        if (_ui.value.stage is WizardStage.Receive) stayWith(notice) else setStage(receive(notice), 1, SHOW_FIRST)
+                    } else {
+                        reject(rejectionNotice(reason))
+                    }
+                }
             }
         } catch (ce: CancellationException) {
             throw ce
@@ -619,6 +631,12 @@ class PairingWizardViewModel(
         }
     }
 
+    /** Invite [id] is no longer on record: the wizard stops holding it (and has nothing to discard on close). */
+    private fun releaseInvite(id: String) {
+        if (unsharedInviteId == id) unsharedInviteId = null
+        if (_inviteId.value == id) setInviteId(null)
+    }
+
     /** Top-bar "Delete" (the held invite) or the mutual-invite action (the held invite, or the one the
      *  pasted reply matched): drop invite [pairingId] and close the wizard. If the delete fails the
      *  record (and the wizard) stay. */
@@ -629,8 +647,7 @@ class PairingWizardViewModel(
         viewModelScope.launch {
             try {
                 withContext(ioDispatcher) { pairing.deleteInvite(id) }
-                if (unsharedInviteId == id) unsharedInviteId = null
-                if (_inviteId.value == id) setInviteId(null)
+                releaseInvite(id)
                 _closed.emit(Unit)
             } catch (ce: CancellationException) {
                 throw ce

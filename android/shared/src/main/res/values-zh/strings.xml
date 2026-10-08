@@ -246,6 +246,7 @@
     <string name="pairing_mismatch_deleted">已删除该联系人，请重新添加</string>
     <string name="pairing_mutual_invite">你们互相发了邀请，已经用对方的那条加好了，这条可以删掉</string>
     <string name="pairing_mutual_invite_delete">删掉这条邀请</string>
+    <string name="pairing_mutual_invite_resolved">你们互相发了邀请，已经用对方的那条加好了，你这条已经删掉。记得把你发回的配对码发给对方。</string>
     <string name="pairing_next_after_scan">对方已扫码 · 下一步</string>
     <string name="pairing_note_hint">只有你看得到</string>
     <string name="pairing_note_placeholder">备注：这是发给谁的</string>

@@ -43,6 +43,8 @@ interface PairingDriver {
     /**
      * @throws NoMatchingInviteException when no pending invite matches the response.
      * @throws AlreadyPairedException when the responder is already a contact; the invite stays pending.
+     * @throws MutualInviteException when mutual invites were resolved in favour of the responder's; my
+     *   invite was retired.
      */
     suspend fun completeIncoming(wireText: String): PairingCoordinator.CompleteOutcome
 
@@ -112,11 +114,23 @@ sealed interface IncomingRejection {
 
     /**
      * The peer is already a contact. [matchedPairingId] is set only for a reply that answered one of my
-     * pending invites while its sender is a contact whose invite I accepted (互发邀请): that invite of
-     * mine is now useless, and the caller may offer to delete exactly it.
+     * pending invites while its sender is a contact whose invite I accepted and whose messages already
+     * decrypt here (互发邀请, in use): that invite of mine is now useless, and the caller may offer to
+     * delete exactly it.
      */
     data class AlreadyPaired(val fingerprintHex: String, val matchedPairingId: String? = null) : IncomingRejection {
         override val messageRes get() = PairingCopy.ALREADY_PAIRED
+        override val contactFingerprintHex: String get() = fingerprintHex
+    }
+
+    /**
+     * Mutual invites, both accepted, and the fingerprint tie-break picked THEIR invite: the session I hold
+     * is the right one, and the invite of mine this reply answered ([retiredPairingId]) has been retired
+     * (key material invalidated, record removed). They switch to the same session once they paste the
+     * reply I sent back. Contact and session were not touched.
+     */
+    data class MutualInvite(val fingerprintHex: String, val retiredPairingId: String) : IncomingRejection {
+        override val messageRes get() = PairingCopy.MUTUAL_INVITE_RESOLVED
         override val contactFingerprintHex: String get() = fingerprintHex
     }
 }
@@ -129,6 +143,9 @@ class NoMatchingInviteException : Exception()
  * existing contact's session is never replaced — re-pairing requires deleting the contact first.
  */
 class AlreadyPairedException(val fingerprintHex: String, val matchedPairingId: String? = null) : Exception()
+
+/** See [IncomingRejection.MutualInvite]: my invite [retiredPairingId] was retired, nothing else was written. */
+class MutualInviteException(val fingerprintHex: String, val retiredPairingId: String) : Exception()
 
 /** The invite's inviter is this device: the user pasted an invite they issued themselves. Nothing was written. */
 class OwnInviteException : Exception()
@@ -165,6 +182,12 @@ sealed interface IncomingOutcome {
  * already a contact** — on either path it is refused with [AlreadyPairedException] and zero
  * writes, so an in-use session, and the contact's name / verified flag / invite digest, can
  * only be replaced after the user deletes that contact.
+ *
+ * The one exception is the **mutual-invite window**: both people sent an invite and each accepted
+ * the other's, so each holds half of a different handshake and neither session can work. When the
+ * reply to my invite arrives from such a contact — one created by accepting their invite, whose
+ * messages have never decrypted here (my response to them is still on file) — both sides converge
+ * on the invite of the side with the higher fingerprint (see [resolveMutualInvite]).
  *
  * **Process-death resumable on A.** A retains nothing secret between rounds —
  * only the public pairing nonce in the pending record. [completeIncoming]
@@ -365,23 +388,33 @@ class PairingCoordinator(
         // ── Trial phase: pure computation. Nothing below writes to any store until a match is
         // found; A's SPK is only loaded (an invite on record means it was provisioned at mint
         // time), never (re)provisioned here.
-        val match = identityStore.load().use { ik ->
-            prekeyProvisioner.loadActiveSpk().use { spk ->
+        val (match, localFp) = identityStore.load().use { ik ->
+            val found = prekeyProvisioner.loadActiveSpk().use { spk ->
                 records.firstNotNullOfOrNull { record ->
                     tryComplete(ik, spk, record, headerBytes)?.let { record to it }
                 }
             }
-        } ?: throw NoMatchingInviteException()
-        val (record, r) = match
+            found to InbandPairing.localFingerprintHex(ik)
+        }
+        val (record, r) = match ?: throw NoMatchingInviteException()
         val fp = r.peerFingerprintHex
 
-        // An existing contact's session is never replaced. This also makes a completion that
-        // already committed its contact unrepeatable, even if removing its record failed.
+        // An existing contact's session is never replaced — with one exception, the mutual-invite
+        // window below. This also makes a completion that already committed its contact
+        // unrepeatable, even if removing its record failed.
         val existing = repository.contacts.first().firstOrNull { it.fingerprintHex == fp }
         if (existing != null) {
-            r.session.close() // unowned native handle; nothing was persisted
-            // 互发邀请: I already accepted their invite, so this invite of mine is spare — name it.
-            throw AlreadyPairedException(fp, record.pairingId.takeIf { existing.acceptedInviteDigest != null })
+            if (existing.acceptedInviteDigest == null) {
+                r.session.close() // unowned native handle; nothing was persisted
+                throw AlreadyPairedException(fp)
+            }
+            if (responses.recordFor(fp) == null) {
+                r.session.close()
+                // 互发邀请, but their messages already decrypt here (the response went with the first
+                // one): the session from accepting their invite is in use, this invite of mine is spare.
+                throw AlreadyPairedException(fp, record.pairingId)
+            }
+            return resolveMutualInvite(record, r, existing, localFp)
         }
 
         // ── Commit phase: exactly one record, the first that verified. Not cancellable: once the key
@@ -404,6 +437,62 @@ class PairingCoordinator(
             // the localized default ("Contact xxxxxx").
             val displayName = record.note?.takeIf { it.isNotEmpty() } ?: responderName ?: defaultContactName(fp.take(6))
             val contact = pairedContact(fp, r.peerDeviceId, r.emoji, displayName, acceptedInviteDigest = null)
+            repository.upsertContact(contact)
+            pending.remove(record.pairingId)
+            CompleteOutcome(r.emoji, contact)
+        }
+    }
+
+    /**
+     * The mutual-invite window: we each pasted the other's invite, so each side holds the accepter's
+     * half of a DIFFERENT handshake, and now the peer's reply to my invite has arrived. The reply
+     * proves the peer holds the accepter's half of MY invite; my response record for them is still on
+     * file, so no message of theirs has ever decrypted here — the session I hold from accepting their
+     * invite has never worked for them, and replacing it loses nothing they can read.
+     *
+     * Both sides reach this point with the same two fingerprints and pick the same handshake: the
+     * invite of the side with the HIGHER fingerprint wins.
+     *
+     *  - Mine wins (local > peer): complete my invite and replace the session I got by accepting
+     *    theirs. The contact keeps its name, takes the new safety emoji (verification is reset — the
+     *    old emoji belonged to the discarded session), and no longer records an accepted invite; my
+     *    response to their invite is dropped (they will never complete it: their reply here retires it
+     *    on their side). Returns the completion like a normal round 2b.
+     *  - Theirs wins (local < peer): keep the session I hold (it is the peer's winning handshake),
+     *    retire the invite this reply answered (key material invalidated, record removed) and throw
+     *    [MutualInviteException]. My response record stays: the peer needs that code to finish.
+     */
+    private suspend fun resolveMutualInvite(
+        record: PendingPairingRecord,
+        r: InbandPairing.CompleteResult,
+        existing: Contact,
+        localFp: String,
+    ): CompleteOutcome {
+        val fp = r.peerFingerprintHex
+        if (localFp < fp) {
+            r.session.close() // unowned native handle; never persisted
+            withContext(NonCancellable) {
+                keyMaterial.invalidate(record) // throws → nothing removed, the record stays
+                pending.remove(record.pairingId)
+            }
+            throw MutualInviteException(fp, record.pairingId)
+        }
+        return withContext(NonCancellable) {
+            try {
+                keyMaterial.invalidate(record)
+            } catch (t: Throwable) {
+                r.session.close() // nothing persisted, the record stays
+                throw t
+            }
+            // Replaces (and closes) the session from accepting their invite.
+            sessionStore.put(name = fp, session = r.session, peerAlias = fp)
+            if (responses.recordFor(fp) != null) responses.remove(fp)
+            val contact = existing.copy(
+                safetyEmoji = r.emoji,
+                verified = false,
+                deviceId = r.peerDeviceId,
+                acceptedInviteDigest = null,
+            )
             repository.upsertContact(contact)
             pending.remove(record.pairingId)
             CompleteOutcome(r.emoji, contact)
@@ -462,6 +551,8 @@ class PairingCoordinator(
                     IncomingOutcome.Rejected(IncomingRejection.NoMatchingInvite)
                 } catch (e: AlreadyPairedException) {
                     IncomingOutcome.Rejected(IncomingRejection.AlreadyPaired(e.fingerprintHex, e.matchedPairingId))
+                } catch (e: MutualInviteException) {
+                    IncomingOutcome.Rejected(IncomingRejection.MutualInvite(e.fingerprintHex, e.retiredPairingId))
                 }
             PairingTransport.WireKind.SESSION -> IncomingOutcome.Rejected(IncomingRejection.SessionCiphertext)
             PairingTransport.WireKind.UNKNOWN -> IncomingOutcome.Rejected(IncomingRejection.NotPairingWire)
