@@ -41,8 +41,8 @@ targets:
       path: ChencangCompanion/Supporting/Info.plist
       properties:
         CFBundleDisplayName: CamoChat
-        CFBundleShortVersionString: "1.0.0"
-        CFBundleVersion: "6"
+        CFBundleShortVersionString: "1.0.2"
+        CFBundleVersion: "7"
         CFBundleIconName: AppIcon
         ITSAppUsesNonExemptEncryption: false
         LSRequiresIPhoneOS: true
@@ -114,8 +114,8 @@ targets:
       path: ChencangAction/Supporting/Info.plist
       properties:
         CFBundleDisplayName: Decrypt with CamoChat
-        CFBundleShortVersionString: "1.0.0"
-        CFBundleVersion: "6"
+        CFBundleShortVersionString: "1.0.2"
+        CFBundleVersion: "7"
         NSExtension:
           NSExtensionAttributes:
             NSExtensionActivationRule:
