@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Play build: no foreground-service type permission. WorkManager only runs expedited uploads in a
+     foreground service on Android 11 and below, where the type permission isn't required; on 12+ they
+     run as expedited jobs. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" tools:node="remove" />
+</manifest>
