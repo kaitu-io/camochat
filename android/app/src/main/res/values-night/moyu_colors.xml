@@ -26,6 +26,9 @@
     <color name="moyu_share_card_header_text">#FFFFFFFF</color>
     <color name="moyu_share_card_text">#FF1A1C1E</color>
     <color name="moyu_share_card_text_secondary">#FF5A6065</color>
+    <color name="moyu_splash_background">#FF101214</color>
+    <color name="moyu_splash_decoy">#FF26292C</color>
+    <color name="moyu_splash_mark">#FF3FAE8C</color>
     <color name="moyu_status_danger">#FFE0605A</color>
     <color name="moyu_status_warn">#FFD89A4A</color>
     <color name="moyu_surface_base">#FF101214</color>

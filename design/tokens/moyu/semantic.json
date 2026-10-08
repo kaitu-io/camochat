@@ -31,5 +31,8 @@
   "share-card-header-background": { "$value": { "light": "{jade-600}", "dark": "{jade-600}" }, "$type": "color", "$description": "卡片顶部品牌条：聊天窗口缩略图里一眼认出" },
   "share-card-header-text": { "$value": { "light": "{white}", "dark": "{white}" }, "$type": "color" },
   "qr-module": { "$value": { "light": "{black}", "dark": "{black}" }, "$type": "color", "$description": "二维码黑白是识别所需，任何模式都不变" },
-  "qr-quiet-zone": { "$value": { "light": "{white}", "dark": "{white}" }, "$type": "color" }
+  "qr-quiet-zone": { "$value": { "light": "{white}", "dark": "{white}" }, "$type": "color" },
+  "splash-background": { "$value": { "light": "{night-900}", "dark": "{night-900}" }, "$type": "color", "$description": "开屏动画与系统启动页：与桌面图标同底色，不随暗色模式变化" },
+  "splash-mark": { "$value": { "light": "{jade-400}", "dark": "{jade-400}" }, "$type": "color", "$description": "开屏气泡猫，与桌面图标同色" },
+  "splash-decoy": { "$value": { "light": "{mist-800}", "dark": "{mist-800}" }, "$type": "color", "$description": "开屏里猫躲在后面的灰色聊天气泡" }
 }
