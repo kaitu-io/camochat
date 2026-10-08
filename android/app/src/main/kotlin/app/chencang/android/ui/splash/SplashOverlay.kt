@@ -24,7 +24,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -38,6 +37,8 @@ import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
+import app.chencang.android.ui.brand.BrandCatPaths
+import app.chencang.android.ui.brand.drawBrandCatInGrid
 import app.chencang.design.moyuColors
 
 /**
@@ -115,12 +116,7 @@ internal fun SplashOverlay(variant: SplashVariant, onFinished: () -> Unit) {
 private fun DrawScope.drawScene(frame: SplashFrame, paths: SplashPaths, mark: Color, decoy: Color) {
     clipRect(left = -20f, top = -40f, right = 120f, bottom = frame.clipBottom) {
         translate(top = frame.catY) {
-            drawPath(paths.ears, mark)
-            drawPath(paths.ears, mark, style = Stroke(width = 7f, join = StrokeJoin.Round))
-            drawPath(paths.tail, mark)
-            drawPath(paths.tail, mark, style = Stroke(width = 2f, join = StrokeJoin.Round))
-            drawPath(paths.body, mark)
-            drawPath(paths.pupils, mark)
+            drawBrandCatInGrid(paths.cat, mark)
             if (frame.lidScaleY > 0f) {
                 scale(1f, frame.lidScaleY, Offset(0f, SplashGeometry.LID_PIVOT_Y)) {
                     drawPath(paths.lids, mark)
@@ -181,10 +177,7 @@ private inline fun DrawScope.withLayerAlpha(alpha: Float, bounds: Rect, block: D
 }
 
 private class SplashPaths {
-    val ears = parse(SplashGeometry.EAR_LEFT + " " + SplashGeometry.EAR_RIGHT)
-    val tail = parse(SplashGeometry.TAIL)
-    val body = parse(SplashGeometry.BODY).apply { fillType = PathFillType.EvenOdd }
-    val pupils = parse(SplashGeometry.PUPILS)
+    val cat = BrandCatPaths()
     val lids = parse(SplashGeometry.LIDS)
     val wordmarkRest = parse(SplashGeometry.WORDMARK_REST)
     val wordmarkH = parse(SplashGeometry.WORDMARK_H)

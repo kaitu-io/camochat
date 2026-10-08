@@ -96,13 +96,18 @@ public struct PairingCardView: View {
         .padding(.bottom, Moyu.Space.s)
     }
 
-    /// 通栏品牌条:左品牌(半粗)、右步骤标签(粗),单行,放不下就缩(不换行、不裁)。
+    /// 通栏品牌条:左小猫 + 品牌(半粗)、右步骤标签(粗),单行,放不下就缩(不换行、不裁)。
     private var header: some View {
         HStack(spacing: Moyu.Space.s) {
-            Text(L10n.shareCardBrand)
-                .font(.system(size: Moyu.FontSize.callout, weight: .semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+            HStack(spacing: Moyu.Space.xs) {
+                BrandCat(color: Moyu.Palette.shareCardHeaderText)
+                    .frame(width: Moyu.FontSize.callout * BrandCat.markToFont,
+                           height: Moyu.FontSize.callout * BrandCat.markToFont)
+                Text(L10n.shareCardBrand)
+                    .font(.system(size: Moyu.FontSize.callout, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
             Spacer(minLength: 0)
             Text(PairingCardText.step(isResponse: isResponse))
                 .font(.system(size: Moyu.FontSize.callout, weight: .bold))

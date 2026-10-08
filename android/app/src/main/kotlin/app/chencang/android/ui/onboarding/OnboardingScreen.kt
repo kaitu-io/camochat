@@ -22,7 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
-import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -37,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.chencang.android.ui.brand.BrandCat
 import app.chencang.android.ui.me.NamePrompt
 import app.chencang.design.Moyu
 import app.chencang.design.moyuColors
@@ -93,15 +93,9 @@ private fun BrandAct(state: OnboardingState, onGenerateClicked: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(
-            imageVector = Icons.Default.Verified,
-            contentDescription = null,
-            tint = moyuColors.accentPrimary,
-            // Moyu has no icon-glyph-size token (Space/FontSize don't cover
-            // this); 72.dp literal per the plan brief, same class of literal
-            // as SealBreathIcon(64.dp) in PairingWizardScreen's WorkingAct.
-            modifier = Modifier.size(72.dp),
-        )
+        // 品牌猫当 App 标志，纯装饰（下面紧跟 App 名）。Moyu 没有图标尺寸 token，
+        // 96.dp 与 PairingWizardScreen 里 SealBreathIcon(64.dp) 同类字面量。
+        BrandCat(color = moyuColors.accentPrimary, modifier = Modifier.size(96.dp))
         Spacer(Modifier.height(Moyu.Space.Xl))
         Text(
             stringResource(R.string.app_name),

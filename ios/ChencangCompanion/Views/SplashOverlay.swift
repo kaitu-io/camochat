@@ -61,14 +61,7 @@ struct SplashOverlay: View {
         context.drawLayer { cat in
             cat.clip(to: Path(CGRect(x: -20, y: -40, width: 140, height: frame.clipBottom + 40)))
             cat.translateBy(x: 0, y: frame.catY)
-            for ear in [paths.earLeft, paths.earRight] {
-                cat.fill(Path(ear), with: mark)
-                cat.stroke(Path(ear), with: mark, style: StrokeStyle(lineWidth: SplashArt.earStrokeWidth, lineJoin: .round))
-            }
-            cat.fill(Path(paths.tail), with: mark)
-            cat.stroke(Path(paths.tail), with: mark, style: StrokeStyle(lineWidth: SplashArt.tailStrokeWidth, lineJoin: .round))
-            cat.fill(Path(paths.bodyWithEyeHoles), with: mark, style: FillStyle(eoFill: true))
-            cat.fill(Path(paths.pupils), with: mark)
+            BrandCat.drawInGrid(&cat, paths: paths, shading: mark)
             if frame.lidScaleY > 0 {
                 let lid = CGAffineTransform(translationX: 0, y: SplashArt.lidPivotY)
                     .scaledBy(x: 1, y: frame.lidScaleY)

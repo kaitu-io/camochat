@@ -78,9 +78,9 @@ private struct BrandActView: View {
         VStack(spacing: Moyu.Space.xl) {
             Spacer()
 
-            Image(systemName: "seal.fill")
-                .font(moyuFont(72))
-                .foregroundStyle(Moyu.Palette.accentPrimary)
+            // 品牌猫当 App 标志，纯装饰（下面紧跟 App 名）。
+            BrandCat(color: Moyu.Palette.accentPrimary)
+                .frame(width: 96, height: 96)
 
             VStack(spacing: Moyu.Space.s) {
                 Text(L10n.appName)

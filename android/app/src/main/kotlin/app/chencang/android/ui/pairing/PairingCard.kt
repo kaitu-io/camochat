@@ -10,13 +10,16 @@ import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
 import android.text.TextUtils
+import androidx.compose.ui.graphics.Color
 import app.chencang.android.R
+import app.chencang.android.ui.brand.BrandCatPaths
+import app.chencang.android.ui.brand.drawBrandCat
 import app.chencang.design.Moyu
 import app.chencang.shared.R as SharedR
 
 /**
  * 配对卡片图 v2：360x480 dp 的版面按固定 3 px/dp 画成 1080x1440 位图，不依赖设备密度。
- * 自上而下：顶栏（品牌 + 步骤）、标题、邀请专有的一句话卖点、二维码（白底圆角，自己画 quiet zone）、
+ * 自上而下：顶栏（品牌猫 + 品牌 + 步骤）、标题、邀请专有的一句话卖点、二维码（白底圆角，自己画 quiet zone）、
  * 扫码提示、小字说明。顶栏与标题单行/两行内缩小字号而不换行、不截断；说明文字永不截断。
  * 颜色全部取不随暗色变化的 share-card / qr token。
  */
@@ -41,6 +44,9 @@ object PairingCard {
                 else context.getString(SharedR.string.share_card_response_title, n)
         }
     }
+
+    /** 顶栏小猫的边长 / 品牌字号：大写字高约 0.7 em，猫取它的 1.6 倍。 */
+    private const val MARK_TO_FONT = 0.7f * 1.6f
 
     /** 单行文字缩小的下限（占原字号的比例）。 */
     private const val MIN_SHRINK = 0.7f
@@ -81,12 +87,17 @@ object PairingCard {
         val brandPaint = paint(Moyu.FontSize.Callout.value, R.color.moyu_share_card_header_text, true)
         val stepPaint = paint(Moyu.FontSize.Callout.value, R.color.moyu_share_card_header_text, true)
         val headerGap = Moyu.Space.M.value * s
-        val need = brandPaint.measureText(brand) + stepPaint.measureText(step) + headerGap
+        // 品牌字前一只小猫：边长约为大写字高的 1.6 倍，与字一起缩放。
+        val markGap = Moyu.Space.Xs.value * s
+        fun markSide() = brandPaint.textSize * MARK_TO_FONT
+        val need = markSide() + markGap + brandPaint.measureText(brand) + stepPaint.measureText(step) + headerGap
         val ratio = (contentW / need).coerceIn(MIN_SHRINK, 1f)
         brandPaint.textSize *= ratio
         stepPaint.textSize *= ratio
         val baseline = headerH / 2 - (brandPaint.ascent() + brandPaint.descent()) / 2
-        canvas.drawText(brand, pad, baseline, brandPaint)
+        val side = markSide()
+        drawBrandCat(canvas, BrandCatPaths(), Color(brandPaint.color), pad, (headerH - side) / 2, side)
+        canvas.drawText(brand, pad + side + markGap, baseline, brandPaint)
         canvas.drawText(step, w - pad - stepPaint.measureText(step), baseline, stepPaint)
 
         var y = headerH
