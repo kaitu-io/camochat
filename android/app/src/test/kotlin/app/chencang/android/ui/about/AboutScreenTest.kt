@@ -59,4 +59,25 @@ class AboutScreenTest {
         compose.onNodeWithText("View source code").performScrollTo().performClick()
         assertThat(source).isEqualTo(1)
     }
+
+    @Test
+    fun privacyPolicyButtonIsLabelledAndTappable() {
+        var privacy = 0
+        compose.setContent {
+            MoyuTheme {
+                AboutScreen(
+                    site = "https://site.test/",
+                    versionName = "1",
+                    onShareApp = {},
+                    onOpenSource = {},
+                    onOpenSite = {},
+                    onBack = {},
+                    onOpenPrivacy = { privacy++ },
+                )
+            }
+        }
+        compose.onNodeWithText("Privacy policy").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(AboutTestTags.PRIVACY_POLICY).performScrollTo().performClick()
+        assertThat(privacy).isEqualTo(1)
+    }
 }

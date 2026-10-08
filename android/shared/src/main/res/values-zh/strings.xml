@@ -290,6 +290,7 @@
     <string name="settings_media_relay_hint">加密后中转，代码全部公开</string>
     <string name="settings_no_browser">没有可用的浏览器</string>
     <string name="settings_privacy">隐私</string>
+    <string name="settings_privacy_policy">隐私政策</string>
     <string name="settings_version">版本</string>
     <string name="share_app_hint">对方收到后点开安装；聊天软件里收到的若是 .apk.1，请改名或用压缩包发送</string>
     <string name="share_app_preparing">正在准备文件…</string>

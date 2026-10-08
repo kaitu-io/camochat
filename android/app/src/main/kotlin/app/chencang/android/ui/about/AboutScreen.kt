@@ -34,6 +34,7 @@ object AboutTestTags {
     const val SITE = "about-site"
     const val SOURCE = "about-source"
     const val SHARE_APP = "about-share-app"
+    const val PRIVACY_POLICY = "about-privacy-policy"
 }
 
 /** 关于陈仓：它是什么、怎么用、为什么安全，以及官网与源码入口。纯原生 Compose 文本，不嵌网页。 */
@@ -46,6 +47,7 @@ fun AboutScreen(
     onOpenSource: () -> Unit,
     onOpenSite: () -> Unit,
     onBack: () -> Unit,
+    onOpenPrivacy: () -> Unit = {},
     canShareApk: Boolean = ChannelFeatures.canShareApk,
 ) {
     Scaffold(
@@ -96,6 +98,9 @@ fun AboutScreen(
             )
             TextButton(onClick = onOpenSource, modifier = Modifier.fillMaxWidth().testTag(AboutTestTags.SOURCE)) {
                 Text(stringResource(R.string.about_source_code))
+            }
+            TextButton(onClick = onOpenPrivacy, modifier = Modifier.fillMaxWidth().testTag(AboutTestTags.PRIVACY_POLICY)) {
+                Text(stringResource(R.string.settings_privacy_policy))
             }
             if (canShareApk) {
                 TextButton(onClick = onShareApp, modifier = Modifier.fillMaxWidth().testTag(AboutTestTags.SHARE_APP)) {

@@ -264,6 +264,7 @@
   "settings_version": "Version",
   "settings_media_relay": "How voice and photos are sent",
   "settings_media_relay_hint": "Encrypted, then relayed. All the code is public.",
+  "settings_privacy_policy": "Privacy policy",
   "settings_danger": "Danger zone",
   "settings_erase_hint": "Can't be undone. Clears all data on this phone.",
   "settings_erase_confirm_title": "Erase all data?",

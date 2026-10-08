@@ -259,6 +259,7 @@
   "settings_version": "版本",
   "settings_media_relay": "语音图片怎么传的",
   "settings_media_relay_hint": "加密后中转，代码全部公开",
+  "settings_privacy_policy": "隐私政策",
   "settings_danger": "危险区",
   "settings_erase_hint": "不可恢复，会清空本机数据",
   "settings_erase_confirm_title": "删除全部数据？",

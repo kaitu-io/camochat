@@ -41,6 +41,11 @@ final class L10nTests: XCTestCase {
         XCTAssertNotEqual(L10n.statusShared, "status_shared", "key fell through: resource missing")
     }
 
+    func testPrivacyPolicyRowIsLocalized() throws {
+        XCTAssertEqual(try lproj("en").localizedString(forKey: "settings_privacy_policy", value: nil, table: nil), "Privacy policy")
+        XCTAssertEqual(try lproj("zh-Hans").localizedString(forKey: "settings_privacy_policy", value: nil, table: nil), "隐私政策")
+    }
+
     func testEnglishPluralForms() throws {
         let format = try lproj("en").localizedString(forKey: "media_photo_count", value: nil, table: nil)
         let en = Locale(identifier: "en_US")

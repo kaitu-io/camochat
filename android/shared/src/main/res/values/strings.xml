@@ -295,6 +295,7 @@
     <string name="settings_media_relay_hint">Encrypted, then relayed. All the code is public.</string>
     <string name="settings_no_browser">No browser available</string>
     <string name="settings_privacy">Privacy</string>
+    <string name="settings_privacy_policy">Privacy policy</string>
     <string name="settings_version">Version</string>
     <string name="share_app_hint">Your friend opens the file to install. If it arrives as .apk.1 in a chat app, rename it or send the zip.</string>
     <string name="share_app_preparing">Preparing the file…</string>

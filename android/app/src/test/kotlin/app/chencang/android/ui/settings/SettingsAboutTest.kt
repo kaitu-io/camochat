@@ -56,7 +56,40 @@ class SettingsAboutTest {
     }
 
     @Test
+    fun `about group has a privacy policy row that opens on tap only`() {
+        var opened = 0
+        compose.setContent {
+            MoyuTheme {
+                MeContent(
+                    contentPadding = PaddingValues(),
+                    profile = {},
+                    settings = {
+                        SettingsSections(
+                            summaryPrivacy = false,
+                            onSummaryPrivacyChange = {},
+                            onDeleteAccount = {},
+                            versionName = "1",
+                            onOpenSource = {},
+                            onOpenPrivacy = { opened++ },
+                        )
+                    },
+                )
+            }
+        }
+        val title = ApplicationProvider.getApplicationContext<Context>().getString(R.string.settings_privacy_policy)
+        compose.onNodeWithText(title).performScrollTo().assertIsDisplayed()
+        assertThat(opened).isEqualTo(0)
+        compose.onNodeWithTag(SettingsTestTags.PRIVACY_POLICY).performScrollTo().performClick()
+        assertThat(opened).isEqualTo(1)
+    }
+
+    @Test
     fun `source link is the published relay source page`() {
         assertThat(AboutLinks.sourceUrl("https://site.test/")).isEqualTo("https://site.test/source")
+    }
+
+    @Test
+    fun `privacy link is the site privacy page`() {
+        assertThat(AboutLinks.privacyUrl("https://site.test/")).isEqualTo("https://site.test/privacy.html")
     }
 }

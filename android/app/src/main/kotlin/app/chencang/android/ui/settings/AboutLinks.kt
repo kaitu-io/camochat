@@ -17,6 +17,11 @@ object AboutLinks {
 
     fun openSource(context: Context, site: String) = open(context, sourceUrl(site))
 
+    /** 隐私政策页（官网静态页，与 [sourceUrl] 同一个站点）。 */
+    fun privacyUrl(site: String): String = site + "privacy.html"
+
+    fun openPrivacy(context: Context, site: String) = open(context, privacyUrl(site))
+
     fun openSite(context: Context, site: String) = open(context, site)
 
     private fun open(context: Context, url: String) {
