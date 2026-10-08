@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "seq": 4,
+  "seq": 5,
   "sources": [
     "https://d3nnqcgewrb4f0.cloudfront.net/c/",
     "https://dzr6ldib1w492.cloudfront.net/c/",
@@ -16,19 +16,19 @@
   "android": {
     "minVersionCode": 3,
     "latest": {
-      "versionCode": 5,
-      "versionName": "1.0.1",
-      "sha256": "f0ec735632188c2f9a9d785e4078bd447e1a8da19d88180397eabf948a07ed07",
-      "size": 26577579,
+      "versionCode": 6,
+      "versionName": "1.0.2",
+      "sha256": "4931b9ffc2cba91bdb19e48c38351f3c5494e372e61c45b94b6199fa85420d67",
+      "size": 26578575,
       "mirrors": [
-        "https://d3nnqcgewrb4f0.cloudfront.net/dl/chencang-1.0.1.apk",
-        "https://dzr6ldib1w492.cloudfront.net/dl/chencang-1.0.1.apk",
-        "https://dee2wx7h03hqb.cloudfront.net/dl/chencang-1.0.1.apk",
-        "https://github.com/kaitu-io/camochat/releases/download/android-v1.0.1/chencang-1.0.1.apk"
+        "https://d3nnqcgewrb4f0.cloudfront.net/dl/chencang-1.0.2.apk",
+        "https://dzr6ldib1w492.cloudfront.net/dl/chencang-1.0.2.apk",
+        "https://dee2wx7h03hqb.cloudfront.net/dl/chencang-1.0.2.apk",
+        "https://github.com/kaitu-io/camochat/releases/download/android-v1.0.2/chencang-1.0.2.apk"
       ],
       "notes": {
-        "zh": "新图标与开屏动画；首次安装会显示引导页；配对卡片、官网同步换新。",
-        "en": "New icon and launch animation; first launch now shows the welcome screens; refreshed pairing card and website."
+        "zh": "新图标与开屏动画；首次安装显示引导页；修复双方同时发邀请时配对后解不开的问题；设置里可查看隐私政策。",
+        "en": "New icon and launch animation; welcome screens on first launch; fixed pairing when both people send invites at once; privacy policy link in Settings."
       }
     }
   }
