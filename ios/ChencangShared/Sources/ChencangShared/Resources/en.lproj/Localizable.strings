@@ -220,6 +220,7 @@
 "pairing_mismatch_deleted" = "Contact deleted. Add them again.";
 "pairing_mutual_invite" = "You both sent invites. You're already connected through theirs, so this one can be deleted";
 "pairing_mutual_invite_delete" = "Delete this invite";
+"pairing_mutual_invite_resolved" = "You both sent invites. You're connected through theirs, so yours has been removed. Make sure they get the code you sent back.";
 "pairing_next_after_scan" = "They scanned it · Next";
 "pairing_note_hint" = "Only you can see this";
 "pairing_note_placeholder" = "Note: who is this for?";

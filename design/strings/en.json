@@ -341,6 +341,7 @@
   "intake_error_pending_invite": "This message is from someone you haven't finished adding. First copy their “I've accepted your {app} invite” message and paste it to finish, then come back to this one.",
   "pairing_mutual_invite": "You both sent invites. You're already connected through theirs, so this one can be deleted",
   "pairing_mutual_invite_delete": "Delete this invite",
+  "pairing_mutual_invite_resolved": "You both sent invites. You're connected through theirs, so yours has been removed. Make sure they get the code you sent back.",
   "paste_bar_link_only": "Only the link was copied. In your chat app, long-press the message, tap Select All, then copy",
   "conversations_preview_waiting_peer": "Waiting for them to finish adding you",
   "conversations_preview_no_messages": "No messages yet — say hi",

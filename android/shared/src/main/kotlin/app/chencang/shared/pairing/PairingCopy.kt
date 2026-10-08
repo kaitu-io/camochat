@@ -22,4 +22,7 @@ object PairingCopy {
 
     /** The pairing code of someone who is already a contact. */
     @StringRes val ALREADY_PAIRED: Int = R.string.pairing_error_already_paired
+
+    /** Mutual invites resolved in favour of theirs: my invite was retired. */
+    @StringRes val MUTUAL_INVITE_RESOLVED: Int = R.string.pairing_mutual_invite_resolved
 }

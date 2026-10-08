@@ -418,6 +418,15 @@ public final class PairingWizardViewModel: ObservableObject {
                 }
                 await mirrorIntoContactsStore(out.contact)
                 setStage(confirmStage(emoji: out.emoji, contact: out.contact), stepIndex: 2, titles: Self.showFirst)
+            case let .rejected(.mutualInvite(fp, retiredId)):
+                // 互发邀请、定下来用对方的:回执对上的那份我的邀请已被协调器删掉,向导不再持有它。
+                releaseInvite(retiredId)
+                let notice = rejectionNotice(.mutualInvite(fingerprintHex: fp, retiredPairingId: retiredId))
+                if case .receive = ui.stage {
+                    stay(with: notice)
+                } else {
+                    setStage(.receive(notice: notice), stepIndex: 1, titles: Self.showFirst)
+                }
             case let .rejected(rejection):
                 reject(rejectionNotice(rejection))
             }
@@ -426,12 +435,13 @@ public final class PairingWizardViewModel: ObservableObject {
         }
     }
 
-    /// 「已是联系人」的细分 = 互发邀请(对方就是我接受过其邀请的人,联系人带邀请摘要),给「删掉这条邀请」
-    /// (只删邀请,不动联系人 / 会话):向导手握自己的邀请时删这份;没握(从粘贴条进来)时删对方回执对上的
-    /// 那份(协调器报的 `matchedPairingId`)。其余保持原提示。
+    /// 「已是联系人」的细分 = 互发邀请(对方就是我接受过其邀请、且已在用的人——联系人带邀请摘要,为他留的回应
+    /// 已随他的第一条消息清掉),给「删掉这条邀请」(只删邀请,不动联系人 / 会话):向导手握自己的邀请时删这份;
+    /// 没握(从粘贴条进来)时删对方回执对上的那份(协调器报的 `matchedPairingId`)。回应还留着 = 还在互发邀请
+    /// 的收敛窗口里,我手上的邀请可能正是定下来要用的那份,不能劝删。其余保持原提示。
     private func rejectionNotice(_ rejection: IncomingRejection) -> ReceiveNotice {
         if case let .alreadyPaired(fp, matched) = rejection {
-            if let held = inviteId {
+            if let held = inviteId, coordinator.pendingResponse(fingerprintHex: fp) == nil {
                 contactsStore.reload()
                 if contactsStore.contacts.first(where: { $0.id == fp })?.acceptedInviteDigest != nil {
                     return ReceiveNotice(text: L10n.pairingMutualInvite, isHint: true, deleteInviteId: held)
@@ -441,6 +451,19 @@ public final class PairingWizardViewModel: ObservableObject {
             }
         }
         return ReceiveNotice(text: rejection.message, isHint: true, contactId: rejection.contactId)
+    }
+
+    /// 这份邀请已不在记录里(被协调器作废):向导不再持有它,关闭时也不必丢弃。
+    private func releaseInvite(_ id: String) {
+        if unsharedInviteId == id { unsharedInviteId = nil }
+        if inviteId == id {
+            inviteId = nil
+            canResendInvite = false
+        }
+        if heldId == id {
+            heldId = nil
+            onInviteHeld(nil)
+        }
     }
 
     /// 没收下的东西:接收幕上是一行提示;出示幕上是一次性提示(出示幕保持原样)。
@@ -579,15 +602,7 @@ public final class PairingWizardViewModel: ObservableObject {
     public func deleteInvite(pairingId id: String) async {
         do {
             try await coordinator.deleteInvite(pairingId: id)
-            if unsharedInviteId == id { unsharedInviteId = nil }
-            if inviteId == id {
-                inviteId = nil
-                canResendInvite = false
-            }
-            if heldId == id {
-                heldId = nil
-                onInviteHeld(nil)
-            }
+            releaseInvite(id)
             shouldClose = true
         } catch {
             NSLog("CCCHAT 删除邀请失败:\(error)")
