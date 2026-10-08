@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "seq": 2,
+  "seq": 3,
   "sources": [
     "https://d3nnqcgewrb4f0.cloudfront.net/c/",
     "https://dzr6ldib1w492.cloudfront.net/c/",
     "https://dee2wx7h03hqb.cloudfront.net/c/",
-    "https://wordgate.github.io/chencang/c/"
+    "https://kaitu-io.github.io/camochat/c/"
   ],
   "relays": [
     "https://d3nnqcgewrb4f0.cloudfront.net",
@@ -24,7 +24,7 @@
         "https://d3nnqcgewrb4f0.cloudfront.net/dl/chencang-1.0.0.apk",
         "https://dzr6ldib1w492.cloudfront.net/dl/chencang-1.0.0.apk",
         "https://dee2wx7h03hqb.cloudfront.net/dl/chencang-1.0.0.apk",
-        "https://github.com/wordgate/chencang/releases/download/android-v1.0.0/chencang-1.0.0.apk"
+        "https://github.com/kaitu-io/camochat/releases/download/android-v1.0.0/chencang-1.0.0.apk"
       ],
       "notes": {
         "zh": "陈仓首个正式版本：多服务器自动切换，被封也能继续收发语音图片；应用内更新；可把陈仓直接发给朋友；新增「关于陈仓」。",
