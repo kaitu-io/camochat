@@ -3,4 +3,12 @@
     <style name="Theme.Chencang" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/moyu_surface_base</item>
     </style>
+
+    <!-- 冷启动的系统启动页：深色底 + 气泡猫（与桌面图标同一个前景）。首帧画出后换回 Theme.Chencang，
+         MainActivity 的开屏层从同一位置、同样大小接上。两种明暗模式都用这一套。 -->
+    <style name="Theme.Chencang.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/moyu_splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Chencang</item>
+    </style>
 </resources>

@@ -12,6 +12,10 @@ struct ChencangCompanionApp: App {
     /// 只接后台上传会话的系统回调(见 `AppDelegate`)。
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
+    /// 开屏动画只在冷启动（进程内界面第一次出现）播一次；从后台切回来不播。装好后第一次是完整版，之后是短版。
+    @State private var splashVariant: SplashVariant? = SplashGate.variant()
+    /// 由链接唤起时直接淡出。
+    @State private var splashSkip = false
 
     init() {
         let identityStore = IdentityStore()
@@ -27,6 +31,11 @@ struct ChencangCompanionApp: App {
         WindowGroup {
             RootView()
                 .overlay(alignment: .bottom) { PasteBarToast(model: model) }
+                .overlay {
+                    if let variant = splashVariant {
+                        SplashOverlay(variant: variant, skipRequested: splashSkip) { splashVariant = nil }
+                    }
+                }
                 .environmentObject(identityStore)
                 .environmentObject(model)
                 // ChatStore 单独再注入一份:它自己是 ObservableObject(@Published
@@ -43,6 +52,7 @@ struct ChencangCompanionApp: App {
                     #endif
                 }
                 .onOpenURL { url in
+                    splashSkip = true
                     // camo://thread?peer=<id>&highlight=<messageId> — the
                     // Action Extension (Task 11) already appended the decrypted
                     // wire to AppGroupInbox and bounces us here to land on the
@@ -105,6 +115,8 @@ struct ChencangCompanionApp: App {
             if newPhase == .active {
                 Task { await model.handleBecameActive() }
             }
+            // 开屏没播完就切到后台：回来时不再接着播。
+            if newPhase == .background { splashVariant = nil }
         }
     }
 }

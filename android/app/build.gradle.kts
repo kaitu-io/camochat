@@ -176,6 +176,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.core.splashscreen)
 
     // Face-to-face pairing QR: generate (zxing-core) + camera scan (zxing-embedded).
     implementation(libs.zxing.core)

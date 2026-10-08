@@ -46,7 +46,10 @@ targets:
         CFBundleIconName: AppIcon
         ITSAppUsesNonExemptEncryption: false
         LSRequiresIPhoneOS: true
-        UILaunchScreen: {}
+        # 系统启动页 = 开屏动画首帧：底色与猫都和 App 内动画(SplashOverlay)同色、同大小、同位置。
+        UILaunchScreen:
+          UIColorName: SplashBackground
+          UIImageName: SplashCat
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
         UISupportedInterfaceOrientations:

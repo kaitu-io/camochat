@@ -34,6 +34,8 @@ zxingCore = "3.5.3"
 zxingEmbedded = "4.3.0"
 media3 = "1.4.1"
 browser = "1.8.0"
+# 开屏：API 29–30 与 31+ 统一走系统启动页（同一图标、同一底色）。
+coreSplashscreen = "1.0.1"
 # 先分享、后上传（spec 2026-09-30 §1.1）：后台上传引擎。2.9.x 是支持 compileSdk 36 的稳定线。
 work = "2.9.1"
 
@@ -95,6 +97,7 @@ androidx-media3-common = { module = "androidx.media3:media3-common", version.ref
 androidx-media3-muxer = { module = "androidx.media3:media3-muxer", version.ref = "media3" }
 # 设置 → 关于 → 服务器源码（Custom Tab）
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 # 媒体上传引擎（离开会话/进后台/进程被杀都续传）
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 androidx-work-testing = { module = "androidx.work:work-testing", version.ref = "work" }
