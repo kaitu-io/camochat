@@ -1,12 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- CamoChat bubble cat. Source of truth: brand/camochat-glyph.svg (100-unit grid),
+     scaled into the 66dp adaptive-icon safe zone. Eyes are holes (evenOdd) so the
+     same drawable works as the themed-icon monochrome layer. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M54,28 L54,80 M30,54 L78,54"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="8"/>
+    <group
+        android:translateX="26"
+        android:translateY="24.9"
+        android:scaleX="0.56"
+        android:scaleY="0.56">
+        <path
+            android:fillColor="#3FAE8C"
+            android:strokeColor="#3FAE8C"
+            android:strokeWidth="7"
+            android:strokeLineJoin="round"
+            android:pathData="M19,48 L23,13 L47,31 Z M81,48 L77,13 L53,31 Z" />
+        <path
+            android:fillColor="#3FAE8C"
+            android:strokeColor="#3FAE8C"
+            android:strokeWidth="2"
+            android:strokeLineJoin="round"
+            android:pathData="M24,76 C22,88 16,93 7,95 C22,97 34,92 42,82 Z" />
+        <path
+            android:fillColor="#3FAE8C"
+            android:fillType="evenOdd"
+            android:pathData="M36,28 H64 A24,24 0 0 1 88,52 V60 A24,24 0 0 1 64,84 H36 A24,24 0 0 1 12,60 V52 A24,24 0 0 1 36,28 Z M25,52 Q37,41 47,55 Q35,68 25,52 Z M75,52 Q63,41 53,55 Q65,68 75,52 Z" />
+        <path
+            android:fillColor="#3FAE8C"
+            android:pathData="M36.5,46 Q39,54.5 36.5,63 Q34,54.5 36.5,46 Z M63.5,46 Q66,54.5 63.5,63 Q61,54.5 63.5,46 Z" />
+    </group>
 </vector>
