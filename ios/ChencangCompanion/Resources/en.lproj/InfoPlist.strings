@@ -1,0 +1,5 @@
+/* GENERATED FILE — DO NOT EDIT. Source: design/strings/*.json. Regenerate: cd design && npm run strings */
+"CFBundleDisplayName" = "CamoChat";
+"NSCameraUsageDescription" = "Camera access is needed to scan pairing QR codes and to take photos and videos.";
+"NSMicrophoneUsageDescription" = "Microphone access is needed to record voice messages while you hold the button.";
+"NSPhotoLibraryAddUsageDescription" = "Permission is needed to save images to your photo library.";

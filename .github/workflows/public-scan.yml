@@ -1,0 +1,17 @@
+name: public-scan
+on:
+  push:
+  pull_request:
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Internal-info deny scan
+        run: bash scripts/test-public-scan.sh && bash scripts/public-scan.sh
+      - name: Secret scan (gitleaks)
+        run: |
+          VER=8.21.2
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tgz" "https://github.com/gitleaks/gitleaks/releases/download/v${VER}/gitleaks_${VER}_linux_x64.tar.gz"
+          mkdir "$RUNNER_TEMP/gl" && tar -xzf "$RUNNER_TEMP/gitleaks.tgz" -C "$RUNNER_TEMP/gl"
+          "$RUNNER_TEMP/gl/gitleaks" detect --no-git --source . --config .gitleaks.toml --redact

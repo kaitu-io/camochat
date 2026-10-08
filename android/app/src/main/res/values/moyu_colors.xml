@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GENERATED FILE — DO NOT EDIT. Source: design/tokens/moyu/*.json -->
+<resources>
+    <color name="moyu_accent_container">#FFD9F0E8</color>
+    <color name="moyu_accent_on_primary">#FFFFFFFF</color>
+    <color name="moyu_accent_primary">#FF1E7A68</color>
+    <color name="moyu_avatar_1">#FF1E7A68</color>
+    <color name="moyu_avatar_2">#FF4A5A8A</color>
+    <color name="moyu_avatar_3">#FF8A6A4A</color>
+    <color name="moyu_avatar_4">#FF6E4A8A</color>
+    <color name="moyu_avatar_5">#FF4A7A8A</color>
+    <color name="moyu_avatar_6">#FF8A4A5A</color>
+    <color name="moyu_avatar_7">#FF5A8A4A</color>
+    <color name="moyu_avatar_8">#FF8A7A4A</color>
+    <color name="moyu_avatar_glyph">#FFFFFFFF</color>
+    <color name="moyu_border_hairline">#FFE4E4E1</color>
+    <color name="moyu_bubble_peer">#FFFFFFFF</color>
+    <color name="moyu_bubble_self">#FFD9F0E8</color>
+    <color name="moyu_media_scrim">#66000000</color>
+    <color name="moyu_media_viewer_background">#FF000000</color>
+    <color name="moyu_qr_module">#FF000000</color>
+    <color name="moyu_qr_quiet_zone">#FFFFFFFF</color>
+    <color name="moyu_share_card_accent">#FF1E7A68</color>
+    <color name="moyu_share_card_background">#FFF7F7F5</color>
+    <color name="moyu_share_card_header_background">#FF1E7A68</color>
+    <color name="moyu_share_card_header_text">#FFFFFFFF</color>
+    <color name="moyu_share_card_text">#FF1A1C1E</color>
+    <color name="moyu_share_card_text_secondary">#FF5A6065</color>
+    <color name="moyu_status_danger">#FFD64545</color>
+    <color name="moyu_status_warn">#FFC07A18</color>
+    <color name="moyu_surface_base">#FFF7F7F5</color>
+    <color name="moyu_surface_raised">#FFFFFFFF</color>
+    <color name="moyu_surface_sunken">#FFEFEFEC</color>
+    <color name="moyu_text_primary">#FF1A1C1E</color>
+    <color name="moyu_text_secondary">#FF5A6065</color>
+    <color name="moyu_text_tertiary">#FF90969B</color>
+</resources>

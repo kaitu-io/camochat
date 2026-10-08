@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- GENERATED FILE — DO NOT EDIT. Source: design/strings/*.json. Regenerate: cd design && npm run strings -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>chats_pending_invites</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@v@</string>
+        <key>v</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>ld</string>
+            <key>one</key>
+            <string>1 invite is waiting for a reply</string>
+            <key>other</key>
+            <string>%ld invites are waiting for a reply</string>
+        </dict>
+    </dict>
+    <key>contacts_badge_cd</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@v@</string>
+        <key>v</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>ld</string>
+            <key>one</key>
+            <string>Contacts, %ld pending</string>
+            <key>other</key>
+            <string>Contacts, %ld pending</string>
+        </dict>
+    </dict>
+    <key>media_forward_all</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@v@</string>
+        <key>v</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>ld</string>
+            <key>one</key>
+            <string>Forward %ld photo</string>
+            <key>other</key>
+            <string>Forward all %ld</string>
+        </dict>
+    </dict>
+    <key>media_photo_count</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@v@</string>
+        <key>v</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>ld</string>
+            <key>one</key>
+            <string>%ld photo</string>
+            <key>other</key>
+            <string>%ld photos</string>
+        </dict>
+    </dict>
+    <key>media_preview_images</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@v@</string>
+        <key>v</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>ld</string>
+            <key>one</key>
+            <string>[%ld photo]</string>
+            <key>other</key>
+            <string>[%ld photos]</string>
+        </dict>
+    </dict>
+    <key>media_voice_seconds_left</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@v@</string>
+        <key>v</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>ld</string>
+            <key>one</key>
+            <string>%ld second left</string>
+            <key>other</key>
+            <string>%ld seconds left</string>
+        </dict>
+    </dict>
+</dict>
+</plist>

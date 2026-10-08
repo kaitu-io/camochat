@@ -1,0 +1,129 @@
+name: ChencangiOS
+options:
+  bundleIdPrefix: app.chencang
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+  defaultConfig: Debug
+  groupSortPosition: top
+  developmentLanguage: en
+
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    DEVELOPMENT_TEAM: NJT954Q3RH
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGNING_ALLOWED: YES
+    CODE_SIGN_IDENTITY: "Apple Development"
+    PROVISIONING_PROFILE_SPECIFIER: ""
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+
+packages:
+  Chencang:
+    path: ../bindings/swift
+  ChencangShared:
+    path: ChencangShared
+
+targets:
+  ChencangCompanion:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: ChencangCompanion
+        excludes:
+          - "Supporting/Info.plist"
+          - "Supporting/ChencangCompanion.entitlements"
+      - path: ChencangCompanion/Supporting/PrivacyInfo.xcprivacy
+        type: file
+        buildPhase: resources
+    info:
+      path: ChencangCompanion/Supporting/Info.plist
+      properties:
+        CFBundleDisplayName: CamoChat
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "5"
+        CFBundleIconName: AppIcon
+        ITSAppUsesNonExemptEncryption: false
+        LSRequiresIPhoneOS: true
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        NSCameraUsageDescription: Camera access is needed to scan pairing QR codes and to take photos and videos.
+        NSMicrophoneUsageDescription: Microphone access is needed to record voice messages while you hold the button.
+        NSPhotoLibraryAddUsageDescription: Permission is needed to save images to your photo library.
+        CFBundleURLTypes:
+          - CFBundleURLName: app.chencang.companion
+            CFBundleURLSchemes:
+              - camo
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.chencang.companion
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: NO
+        INFOPLIST_KEY_UILaunchStoryboardName: ""
+        CODE_SIGN_ENTITLEMENTS: ChencangCompanion/Supporting/ChencangCompanion.entitlements
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - package: ChencangShared
+        product: ChencangShared
+      - target: ChencangAction
+        embed: true
+        codeSign: false
+    scheme:
+      testTargets:
+        - ChencangCompanionUITests
+
+  # 真机 UAT 自动化(Plan 3 Task 12):XCUITest 驱动线程/分享面板/备忘录/陈仓解密。
+  ChencangCompanionUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: ChencangCompanionUITests
+        excludes:
+          - "Info.plist"
+    info:
+      path: ChencangCompanionUITests/Info.plist
+      properties:
+        NSPhotoLibraryAddUsageDescription: UAT 测试素材写入相册。
+        NSPhotoLibraryUsageDescription: UAT 测试素材写入相册。
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.chencang.companion.uat
+        TEST_TARGET_NAME: ChencangCompanion
+        TARGETED_DEVICE_FAMILY: "1"
+    dependencies:
+      - target: ChencangCompanion
+
+  ChencangAction:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: ChencangAction
+        excludes:
+          - "Supporting/Info.plist"
+          - "Supporting/ChencangAction.entitlements"
+    info:
+      path: ChencangAction/Supporting/Info.plist
+      properties:
+        CFBundleDisplayName: Decrypt with CamoChat
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "5"
+        NSExtension:
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsText: true
+          NSExtensionPointIdentifier: com.apple.ui-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ActionViewController
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.chencang.companion.action
+        CODE_SIGN_ENTITLEMENTS: ChencangAction/Supporting/ChencangAction.entitlements
+        TARGETED_DEVICE_FAMILY: "1"
+    dependencies:
+      - package: ChencangShared
+        product: ChencangShared

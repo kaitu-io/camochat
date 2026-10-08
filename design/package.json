@@ -1,0 +1,16 @@
+{
+  "name": "chencang-design",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Single source of truth for Chencang design tokens (iOS + Android).",
+  "scripts": {
+    "tokens": "node build-tokens.mjs",
+    "strings": "node build-strings.mjs",
+    "test": "node --test",
+    "lint-colors": "node scripts/lint-colors.mjs"
+  },
+  "devDependencies": {
+    "style-dictionary": "^4.3.0"
+  }
+}

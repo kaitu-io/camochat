@@ -1,0 +1,61 @@
+name: design-tokens
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'design/**'
+      - 'ios/ChencangShared/Sources/ChencangShared/Generated/**'
+      - 'android/design/**'
+      - 'android/app/src/main/res/**'
+      - 'design/strings/**'
+      - 'android/shared/src/main/res/**'
+      - 'ios/ChencangShared/Sources/ChencangShared/Resources/**'
+      - 'ios/ChencangShared/Sources/ChencangShared/L10n/**'
+      - 'ios/ChencangCompanion/Resources/**'
+      - 'ios/ChencangAction/Resources/**'
+      - 'android/app/src/main/**'
+      - 'android/shared/src/main/**'
+      - 'android/scripts/**'
+      - 'ios/scripts/**'
+      - 'ios/**/*.swift'
+      - '.github/workflows/design-tokens-ci.yml'
+
+jobs:
+  tokens-drift-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: design/package-lock.json
+      - name: Install
+        run: cd design && npm ci
+      - name: Unit-test formats
+        run: cd design && node --test
+      - name: Regenerate tokens
+        run: cd design && npm run tokens
+      - name: Regenerate strings
+        run: cd design && npm run strings
+      - name: Fail if generated files drifted from token source
+        run: |
+          git diff --exit-code \
+          || (echo "::error::Generated tokens drifted. Run 'cd design && npm run tokens' and commit." && exit 1)
+          test -z "$(git status --porcelain)" \
+          || (echo "::error::npm run tokens produced untracked/deleted files not reflected in the checkout. Run 'cd design && npm run tokens' locally and commit the result." && exit 1)
+      - name: Lint hardcoded colors
+        working-directory: design
+        run: npm run lint-colors
+      - name: Test UI-literal guard
+        run: node --test android/scripts/check-ui-literals.test.mjs
+      - name: Guard Android UI source against Han literals
+        run: |
+          node android/scripts/check-ui-literals.mjs . \
+          || (echo "::error::UI text must come from design/strings/*.json — run 'cd design && npm run strings'" && exit 1)
+      - name: Guard iOS UI source against Han literals
+        run: |
+          bash ios/scripts/check-l10n.sh --self-test \
+          && bash ios/scripts/check-l10n.sh \
+          || (echo "::error::iOS UI text must come from design/strings/*.json — run 'cd design && npm run strings'" && exit 1)

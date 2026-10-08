@@ -1,0 +1,202 @@
+name: Release chencang-bindings
+
+# Triggered when an annotated tag of the form `bindings-v<semver>` is pushed,
+# e.g. `bindings-v0.1.0-rc1`. The tag procedure is documented in
+# `bindings/docs/INTEGRATION.md`.
+on:
+  push:
+    tags:
+      - 'bindings-v*'
+
+permissions:
+  contents: write   # required for softprops/action-gh-release
+  packages: write   # required for GitHub Packages publish (dry-run today)
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build-ios:
+    name: Build XCFramework (macOS)
+    runs-on: macos-14
+    outputs:
+      xcframework-sha256: ${{ steps.checksum.outputs.sha256 }}
+      xcframework-name: ${{ steps.zip.outputs.zip_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios,aarch64-apple-darwin,x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: bindings-release-macos
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+      - name: Build XCFramework
+        run: cargo run -p xtask -- build-ios
+      - name: Zip XCFramework
+        id: zip
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          cd bindings/swift
+          zip_name="ChencangCore-${REF_NAME}.xcframework.zip"
+          zip -ry "$GITHUB_WORKSPACE/$zip_name" ChencangCore.xcframework
+          echo "zip_path=$GITHUB_WORKSPACE/$zip_name" >> "$GITHUB_OUTPUT"
+          echo "zip_name=$zip_name" >> "$GITHUB_OUTPUT"
+      - name: SHA-256 checksum
+        id: checksum
+        env:
+          ZIP_PATH: ${{ steps.zip.outputs.zip_path }}
+        run: |
+          set -euo pipefail
+          shasum -a 256 "$ZIP_PATH" > "${ZIP_PATH}.sha256"
+          sha=$(awk '{print $1}' "${ZIP_PATH}.sha256")
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+          echo "XCFramework SHA-256: $sha"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xcframework
+          path: |
+            ChencangCore-*.xcframework.zip
+            ChencangCore-*.xcframework.zip.sha256
+
+  build-android:
+    name: Build Android AAR (Linux)
+    runs-on: ubuntu-24.04
+    outputs:
+      aar-sha256: ${{ steps.checksum.outputs.sha256 }}
+      aar-name: ${{ steps.locate.outputs.aar_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: bindings-release-android
+      - name: Install Android SDK + NDK 27
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-34 build-tools;34.0.0 ndk;27.1.12297006
+      - name: Export ANDROID_NDK_HOME
+        run: echo "ANDROID_NDK_HOME=${ANDROID_SDK_ROOT}/ndk/27.1.12297006" >> "$GITHUB_ENV"
+      - name: Install cargo-ndk
+        run: cargo install --locked cargo-ndk
+      - name: Build AAR
+        run: cargo run -p xtask -- build-android
+      - name: Locate AAR
+        id: locate
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          aar=$(find bindings/android/chencang-core-android/build/outputs/aar -name '*.aar' | head -n1)
+          if [ -z "$aar" ]; then
+            echo "::error::AAR build did not produce an .aar"
+            exit 1
+          fi
+          # Stable, tag-stamped filename for release attachment.
+          out="$GITHUB_WORKSPACE/chencang-core-android-${REF_NAME}.aar"
+          cp "$aar" "$out"
+          echo "aar_path=$out" >> "$GITHUB_OUTPUT"
+          echo "aar_name=$(basename "$out")" >> "$GITHUB_OUTPUT"
+      - name: SHA-256 checksum
+        id: checksum
+        env:
+          AAR_PATH: ${{ steps.locate.outputs.aar_path }}
+        run: |
+          set -euo pipefail
+          sha256sum "$AAR_PATH" > "${AAR_PATH}.sha256"
+          sha=$(awk '{print $1}' "${AAR_PATH}.sha256")
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+          echo "AAR SHA-256: $sha"
+      - name: Publish to GitHub Packages (DRY-RUN)
+        # We log the command we WOULD run rather than actually publishing.
+        # Flip this when the org has agreed on packaging coordinates +
+        # provisioned a release secret. See docs/INTEGRATION.md.
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          ACTOR: ${{ github.actor }}
+          AAR_SHA256: ${{ steps.checksum.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          version="${REF_NAME#bindings-v}"
+          cat <<EOF
+          === DRY-RUN: GitHub Packages publish ===
+          Would run from bindings/android/:
+            ./gradlew :chencang-core-android:publishReleasePublicationToGitHubPackagesRepository \\
+              -PgprUser=${ACTOR} \\
+              -PgprKey=\$GITHUB_TOKEN
+          Coordinate: app.chencang:chencang-core-android:${version}
+          SHA-256:    ${AAR_SHA256}
+          ========================================
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aar
+          path: |
+            chencang-core-android-*.aar
+            chencang-core-android-*.aar.sha256
+
+  release:
+    name: Publish GitHub Release
+    needs: [build-ios, build-android]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: xcframework
+          path: ./release-assets
+      - uses: actions/download-artifact@v4
+        with:
+          name: aar
+          path: ./release-assets
+      - name: Compose release notes
+        id: notes
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          XCF_NAME: ${{ needs.build-ios.outputs.xcframework-name }}
+          XCF_SHA: ${{ needs.build-ios.outputs.xcframework-sha256 }}
+          AAR_NAME: ${{ needs.build-android.outputs.aar-name }}
+          AAR_SHA: ${{ needs.build-android.outputs.aar-sha256 }}
+        run: |
+          set -euo pipefail
+          version="${REF_NAME#bindings-v}"
+          {
+            echo "# chencang-bindings ${REF_NAME}"
+            echo
+            echo "Cross-platform bindings for the \`chencang-core\` PQXDH-hybrid + Double Ratchet protocol."
+            echo
+            echo "## Artifacts"
+            echo
+            echo "| File | SHA-256 |"
+            echo "|------|---------|"
+            echo "| ${XCF_NAME} | \`${XCF_SHA}\` |"
+            echo "| ${AAR_NAME} | \`${AAR_SHA}\` |"
+            echo
+            echo "## Install"
+            echo
+            echo "- iOS: Swift Package Manager, see \`bindings/docs/INTEGRATION.md\`."
+            echo "- Android: AAR (GitHub Packages dry-run — coordinates \`app.chencang:chencang-core-android:${version}\`)."
+          } > release-notes.md
+          echo "notes_path=release-notes.md" >> "$GITHUB_OUTPUT"
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: ${{ steps.notes.outputs.notes_path }}
+          files: |
+            release-assets/ChencangCore-*.xcframework.zip
+            release-assets/ChencangCore-*.xcframework.zip.sha256
+            release-assets/chencang-core-android-*.aar
+            release-assets/chencang-core-android-*.aar.sha256
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}

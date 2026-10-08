@@ -1,0 +1,72 @@
+name: chencang-core CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: core
+    steps:
+      - uses: actions/checkout@v4
+      # `stable` (matches bindings-ci): the crypto dependency tree now pulls
+      # crates that declare `edition = "2024"` (e.g. digest 0.11), which Cargo
+      # rejects before 1.85 — the old 1.75 pin can no longer resolve deps.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Format check
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Test
+        run: cargo test --all-features
+      # Audit the workspace-root Cargo.lock (the single lockfile Cargo actually
+      # maintains for every member). Auditing `core/` would read a per-member
+      # lockfile that Cargo ignores for a workspace member, so it silently goes
+      # stale and misreports advisories.
+      - name: Audit
+        uses: actions-rust-lang/audit@v1
+
+  licenses:
+    # Every Rust dependency must be AGPL-3.0-compatible; the allow-list lives
+    # in deny.toml at the workspace root.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: cargo deny check licenses
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check licenses
+
+  media-lambda-test:
+    # infra/media/lambda has its own toolchain (Node.js, no Rust) and its own
+    # dependency set (AWS SDK v3, already present in the Lambda nodejs22.x
+    # runtime image and never committed — see infra/media/.gitignore); it
+    # does not belong in the `test` job above. Path-filtered so unrelated
+    # (e.g. iOS/Android-only) pushes don't pay for a Node setup.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: changed
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            media:
+              - 'infra/media/**'
+      - uses: actions/setup-node@v4
+        if: steps.changed.outputs.media == 'true'
+        with:
+          node-version: 22
+      - name: Install signer deps
+        if: steps.changed.outputs.media == 'true'
+        working-directory: infra/media/lambda
+        run: npm i --no-save @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+      - name: Test signer
+        if: steps.changed.outputs.media == 'true'
+        working-directory: infra/media/lambda
+        run: node --test

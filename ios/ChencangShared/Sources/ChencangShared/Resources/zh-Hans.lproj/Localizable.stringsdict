@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- GENERATED FILE — DO NOT EDIT. Source: design/strings/*.json. Regenerate: cd design && npm run strings -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>chats_pending_invites</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@v@</string>
+        <key>v</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>ld</string>
+            <key>one</key>
+            <string>有 %ld 个邀请在等对方回复</string>
+            <key>other</key>
+            <string>有 %ld 个邀请在等对方回复</string>
+        </dict>
+    </dict>
+    <key>contacts_badge_cd</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@v@</string>
+        <key>v</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>ld</string>
+            <key>other</key>
+            <string>联系人，%ld 项待处理</string>
+        </dict>
+    </dict>
+    <key>media_forward_all</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@v@</string>
+        <key>v</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>ld</string>
+            <key>other</key>
+            <string>转发全部 %ld 张</string>
+        </dict>
+    </dict>
+    <key>media_photo_count</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@v@</string>
+        <key>v</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>ld</string>
+            <key>other</key>
+            <string>%ld 张图片</string>
+        </dict>
+    </dict>
+    <key>media_preview_images</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@v@</string>
+        <key>v</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>ld</string>
+            <key>other</key>
+            <string>[%ld 张图片]</string>
+        </dict>
+    </dict>
+    <key>media_voice_seconds_left</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@v@</string>
+        <key>v</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>ld</string>
+            <key>other</key>
+            <string>还可以说 %ld 秒</string>
+        </dict>
+    </dict>
+</dict>
+</plist>

@@ -1,0 +1,150 @@
+name: chencang-bindings CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'bindings/**'
+      - 'core/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.cargo/**'
+      - '.github/workflows/bindings-ci.yml'
+  pull_request:
+    paths:
+      - 'bindings/**'
+      - 'core/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.cargo/**'
+      - '.github/workflows/bindings-ci.yml'
+
+# Workspace-wide jobs share the cache key so iOS/Android builders can reuse the
+# `cargo check` artifacts produced by `rust-test`.
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  rust-test:
+    name: Rust workspace tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: bindings-ci
+      - name: Format check (bindings)
+        run: cargo fmt --check
+        working-directory: bindings
+      - name: Clippy (bindings)
+        run: cargo clippy --all-targets -- -D warnings
+        working-directory: bindings
+      - name: Workspace test
+        run: cargo test --workspace
+
+  swift-test:
+    name: iOS XCFramework + Swift package tests
+    runs-on: macos-14
+    needs: rust-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios,aarch64-apple-darwin,x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: bindings-ci-macos
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+      - name: Build XCFramework
+        run: cargo run -p xtask -- build-ios
+      - name: Generate Swift bindings (drift check)
+        run: cargo run -p xtask -- gen-bindings
+      - name: Verify committed Swift bindings did not drift
+        run: git diff --exit-code bindings/swift/Sources
+      - name: Swift package tests
+        run: swift test
+        working-directory: bindings/swift
+
+  android-build:
+    name: Android AAR build (no on-device tests)
+    runs-on: ubuntu-24.04
+    needs: rust-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: bindings-ci-android
+      - name: Install Android SDK + NDK 27
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-34 build-tools;34.0.0 ndk;27.1.12297006
+      - name: Export ANDROID_NDK_HOME
+        run: |
+          echo "ANDROID_NDK_HOME=${ANDROID_SDK_ROOT}/ndk/27.1.12297006" >> "$GITHUB_ENV"
+      - name: Install cargo-ndk
+        run: cargo install --locked cargo-ndk
+      - name: Build Android shared libs + AAR
+        run: cargo run -p xtask -- build-android
+      - name: Verify AAR was produced
+        run: |
+          set -euo pipefail
+          aar=$(find bindings/android/chencang-core-android/build/outputs/aar -name '*.aar' | head -n1)
+          if [ -z "$aar" ]; then
+            echo "::error::No AAR produced under bindings/android/chencang-core-android/build/outputs/aar"
+            exit 1
+          fi
+          echo "Built AAR: $aar"
+          ls -lh "$aar"
+      # NOTE: Kotlin instrumented tests (connectedAndroidTest) require an
+      # Android emulator. They are skipped in CI to keep runtime low; run
+      # locally via `cd bindings/android && ./gradlew :chencang-core-android:connectedAndroidTest`
+      # against an API 35 emulator (e.g. Pixel_7_API_35).
+
+  golden-vectors-determinism:
+    name: Golden vectors regenerate byte-identical
+    runs-on: ubuntu-24.04
+    needs: rust-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: bindings-ci
+      - name: First regeneration
+        run: cargo run -p xtask -- golden-vectors
+      - name: Snapshot first output
+        run: cp bindings/golden-vectors/vectors.json /tmp/vectors-first.json
+      - name: Second regeneration
+        run: cargo run -p xtask -- golden-vectors
+      - name: Diff (must be byte-identical)
+        run: diff -q /tmp/vectors-first.json bindings/golden-vectors/vectors.json
+      - name: Verify against committed vectors
+        run: git diff --exit-code bindings/golden-vectors
+
+  bench:
+    name: Encrypt throughput bench (compile-only)
+    runs-on: ubuntu-24.04
+    needs: rust-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: bindings-ci
+      # Full criterion runs are too slow for PR CI (≈minutes per group). We
+      # compile-only here to keep the bench wired up and catch API drift; the
+      # nightly throughput numbers live in a separate manual workflow.
+      - name: Compile bench
+        run: cargo bench -p chencang-bindings --bench encrypt_throughput --no-run

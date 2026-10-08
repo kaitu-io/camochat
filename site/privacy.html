@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>隐私政策 — 陈仓 Chencang</title>
+<meta name="description" content="陈仓隐私政策：端到端加密的私密对话工具如何处理你的数据。文字消息不经过任何服务器；语音、图片、视频以密文形式经存储中转、约 1–2 天内自动删除，中转源码公开。密钥永不离开设备，不读取你在和谁聊天，不上传通讯录，无需注册账号。">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0c1a14">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  :root{
+    --bg:#0c1a14; --surface:#112a20; --line:#1f4334;
+    --text:#e8f0eb; --muted:#9fb4a8; --jade:#2fbf8f; --gold:#d8b65a;
+    --maxw:760px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.8; -webkit-font-smoothing:antialiased;}
+  a{color:var(--jade); text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 24px}
+  header{position:sticky; top:0; z-index:10; backdrop-filter:blur(10px);
+    background:rgba(12,26,20,.78); border-bottom:1px solid var(--line)}
+  .nav{display:flex; align-items:center; height:64px}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:700; font-size:20px; color:var(--text)}
+  .brand .mark{width:30px; height:30px}
+  main{padding:56px 0 80px}
+  h1{font-size:clamp(28px,5vw,40px); font-weight:800; margin:0 0 6px}
+  .updated{color:var(--muted); font-size:14px; margin-bottom:40px}
+  h2{font-size:22px; font-weight:700; margin:40px 0 12px; color:var(--text)}
+  p,li{color:#d3e0d8; font-size:16px}
+  .muted{color:var(--muted)}
+  ul{padding-left:22px}
+  li{margin:6px 0}
+  .tldr{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:24px 26px; margin:8px 0 8px}
+  .tldr strong{color:var(--jade)}
+  .tldr ul{margin:10px 0 0; list-style:none; padding:0}
+  .tldr li{padding-left:28px; position:relative}
+  .tldr li::before{content:"✓"; position:absolute; left:0; color:var(--jade); font-weight:800}
+  footer{border-top:1px solid var(--line); padding:28px 0; color:var(--muted); font-size:14px; text-align:center}
+  .back{display:inline-block; margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="/">
+      <svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0c1a14"/><rect x="3" y="3" width="58" height="58" rx="12" fill="none" stroke="#2fbf8f" stroke-width="2"/><text x="32" y="44" font-family="PingFang SC, sans-serif" font-size="38" font-weight="700" fill="#2fbf8f" text-anchor="middle">陈</text></svg>
+      陈仓 Chencang
+    </a>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>隐私政策</h1>
+  <p class="updated">生效日期：2026 年 10 月 7 日</p>
+
+  <div class="tldr">
+    <strong>一句话版本</strong>
+    <ul>
+      <li>密钥在你的设备上生成，<strong>永不离开设备</strong>、永不上传。</li>
+      <li><strong>文字消息不经过任何服务器</strong>：文字在设备上加密成一段密文，由你自己送进所用的聊天软件，不经任何服务器或云存储，全程不联网。</li>
+      <li><strong>语音、图片、视频以密文形式经我们的存储中转</strong>：App 内 24 小时后显示已过期，云端按存储生命周期约 1–2 天内自动删除；中转服务器全部源码公开在 <a href="/source">本站源码页</a>。</li>
+      <li>我们<strong>不读取</strong>你在用哪个 App、不读取屏幕、不读取你在和谁聊天。</li>
+      <li>无需注册账号，<strong>不索取通讯录</strong>，不收集位置与广告标识。</li>
+    </ul>
+  </div>
+
+  <h2>1. 陈仓是什么</h2>
+  <p>陈仓是一款端到端加密的私密对话工具。你在陈仓中写下的消息会被加密成一段密文，由你自己经系统分享或复制粘贴送进任何聊天软件；唯有已与你完成配对的对方能将其还原。陈仓还附带「陈仓解密」动作扩展，让你在其他应用中直接选中并还原密文。<strong>陈仓本身不承担文字消息的传输——它不为文字建立任何通信通道。</strong>语音、图片、视频是唯一的例外：它们的密文经我们的存储中转（见第 5 节）。本政策说明陈仓如何处理与你相关的数据。</p>
+
+  <h2>2. 我们处理哪些数据</h2>
+  <ul>
+    <li><strong>设备密钥与身份</strong>：首次启动时在你的设备本地生成长期密钥。配对时，你的公开密钥材料<strong>直接带内交给对方</strong>（通过你分享的邀请码 / 二维码），不经任何服务器；<strong>私钥永远留在设备的安全存储（Keychain / Keystore）中</strong>，我们无法读取。</li>
+    <li><strong>加密文字消息</strong>：你写下的文字在设备上完成端到端加密后，被编码为一段密文文本，<strong>由你通过所用的聊天软件自行发送</strong>——不上传到任何服务器或云存储。我们既不持有解密密钥、也不经手这段密文，<strong>无法读取任何内容</strong>。</li>
+    <li><strong>加密语音、图片、视频</strong>：你发送的语音、图片或视频先在设备上用一把随机生成、每个文件各不相同的密钥加密，再把<strong>密文</strong>上传到我们的存储中转（见第 5 节）；这把密钥只放在端到端加密的文字消息里，随你经聊天软件送给对方，<strong>从不发给我们的服务器</strong>。因此我们只经手密文，<strong>无法读取其内容</strong>。</li>
+    <li><strong>配对元数据</strong>：邀请码、配对随机数、握手公开材料等，用于在两台设备间建立安全会话，<strong>全程在你与对方之间带内传递，不经服务器</strong>。这些不包含消息明文，也不揭示你的身份。</li>
+    <li><strong>你主动分享或选中的文本</strong>：通过系统分享菜单发进陈仓的文字，或用「陈仓解密」动作扩展<strong>主动选中并交给它</strong>的那段密文，陈仓才会读取；不会读取其他任何文本框或应用内容。这些内容<strong>仅在你的设备本地处理，不会被上传或留存</strong>。</li>
+  </ul>
+
+  <h2>3. 我们不收集、不读取什么</h2>
+  <ul>
+    <li>不读取你正在使用的宿主应用的身份，不读取屏幕，不读取你正在与谁对话。</li>
+    <li>不上传、不索取系统通讯录——联系人由你自行配对添加。</li>
+    <li>不收集位置信息、不使用广告标识符、不进行跨应用追踪。</li>
+    <li>不要求手机号、邮箱或任何账号注册。</li>
+  </ul>
+
+  <h2>4. 权限说明</h2>
+  <ul>
+    <li><strong>相机</strong>：用于面对面配对时扫描对方的二维码，以及你主动拍摄要发送的照片或视频。扫码取景画面不被保存、不被上传；你选择发送的照片或视频只以密文形式经存储中转（见第 5 节）。</li>
+    <li><strong>麦克风</strong>：仅在你按住「按住说话」录制语音时使用。录下的语音在设备上加密后才上传，服务器只收到密文。</li>
+    <li><strong>网络</strong>：只用于三件事——上传和下载加密后的语音、图片、视频；读取公开的、带签名的配置文件；下载安装包（仅 Android 直装版）。文字消息与配对不使用网络。</li>
+  </ul>
+
+  <h2>5. 数据存储与留存</h2>
+  <p><strong>文字消息不经过任何服务器，也不使用任何云端存储</strong>——文字密文随你发出的消息留在你所用的聊天软件里，我们不持有任何副本。你的密钥、联系人与会话记录<strong>只保存在你自己的设备上</strong>，由你自行管理与删除。</p>
+  <p><strong>语音、图片、视频的存储中转</strong>是陈仓唯一使用的服务器，运行在 Amazon Web Services（AWS）上。它收到和留存的只有：</p>
+  <ul>
+    <li><strong>加密后的文件（密文）</strong>，以及它的字节大小和类型（语音 / 图片 / 视频，仅是一个类别编号，不代表内容）；</li>
+    <li><strong>上传时间</strong>；</li>
+    <li>与任何网站或 CDN 一样，发起请求的 <strong>IP 地址</strong>会经过 AWS CloudFront 与 AWS WAF；你的 IP 只在 WAF 按 IP 限制上传频率、防止滥用时被临时使用，<strong>不落盘</strong>。</li>
+  </ul>
+  <p>它<strong>收不到</strong>：任何解密密钥、文件明文、账号（陈仓没有账号）、通讯录或联系人、你和谁在聊天。<strong>中转不保存访问日志</strong>——CloudFront 访问日志、WAF 日志均未开启，签名函数没有写日志的权限；你的 IP 只在 WAF 按 IP 限流时被临时使用，不落盘。</p>
+  <p><strong>保留多久</strong>：App 内 24 小时后向你显示「已过期」；云端存储按生命周期规则（1 天）自动删除，由于存储服务按天批量执行，实际删除约在 1–2 天内完成。我们不提供延长保存，陈仓不是网盘。</p>
+  <p><strong>源码公开</strong>：中转服务器的全部源码公开在 <a href="/source">本站源码页</a>，任何人都可以查看它到底做了什么。</p>
+
+  <p><strong>配置文件与安装包</strong>：iOS 与 Android 版都会读取一份公开的、带签名的配置文件，来源是本站的几个地址，以及作为备用的 GitHub 托管地址（GitHub Pages）；仅 Android 直装版会在你同意更新后下载安装包，下载来源是本站的这几个地址或 GitHub 上的发布页（GitHub Releases）。这些请求不携带账号、设备标识或其他个人信息。我们自己的服务器不保存访问日志（见上文）；GitHub 托管的地址由 GitHub 运营，受 GitHub 自身的隐私政策约束。文字消息仍然不经过网络。</p>
+
+  <h2>6. 数据共享</h2>
+  <p>我们不会出售你的数据，也不会将其用于广告。<strong>文字消息不经过任何服务器</strong>，我们与任何第三方都没有接触它的环节。语音、图片、视频的密文经由 AWS 提供的存储中转（见第 5 节），AWS 只作为基础设施承载这些密文，同样拿不到解密密钥。在法律强制要求下，我们<strong>最多只能交出尚未过期删除的密文</strong>及上文列出的大小、类型与上传时间——没有密钥，这些密文无法还原成内容；文字消息我们从不持有，也就无从提供。</p>
+
+  <h2>7. 你的权利</h2>
+  <p>你可以随时删除已配对的联系人、轮换设备密钥或卸载应用，以终止相关数据的处理。卸载会移除设备本地的私钥与会话记录。</p>
+
+  <h2>8. 儿童隐私</h2>
+  <p>陈仓不面向 13 岁以下儿童，也不会有意收集其个人信息。</p>
+
+  <h2>9. 政策更新</h2>
+  <p>本政策如有更新，我们会修改本页顶部的生效日期。重大变更将通过应用内或官网予以告知。</p>
+
+  <h2>10. 联系我们</h2>
+  <p>如对本隐私政策有任何疑问，请<a href="https://github.com/kaitu-io/camochat/issues">在 GitHub 提交问题</a>。</p>
+
+  <a class="back" href="/">← 返回首页</a>
+</main>
+
+<footer>
+  <div class="wrap">© 2026 陈仓 Chencang · 明修栈道，暗度陈仓</div>
+</footer>
+</body>
+</html>

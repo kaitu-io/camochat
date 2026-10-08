@@ -1,0 +1,5 @@
+/* GENERATED FILE — DO NOT EDIT. Source: design/strings/*.json. Regenerate: cd design && npm run strings */
+"CFBundleDisplayName" = "陈仓";
+"NSCameraUsageDescription" = "扫描配对二维码、拍摄照片和视频需要使用相机。";
+"NSMicrophoneUsageDescription" = "按住说话录制语音需要使用麦克风。";
+"NSPhotoLibraryAddUsageDescription" = "保存图片到相册需要此权限。";

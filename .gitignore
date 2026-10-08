@@ -1,0 +1,45 @@
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+node_modules/
+target/
+build/
+bindings/swift/ChencangCore.xcframework/
+bindings/swift/.build/
+bindings/build/
+
+# iOS / Xcode build artefacts (do not commit derived data or local SPM caches)
+ios/**/.build/
+ios/**/.swiftpm/
+ios/**/DerivedData/
+ios/build/
+ios/build-device/
+ios/build-sim/
+ios/build-uat/
+ios/**/xcuserdata/
+*.xcuserstate
+.env
+.env.local
+*.log
+
+# Claude Code agent runtime state
+.claude/
+
+# superpowers skill workspaces (ephemeral)
+.superpowers/
+
+# deploy artifacts & secret-bearing prod config
+/release/*
+!/release/config/
+/deploy/config.center.yml
+
+# chencang spikes — heavy CoreML/ONNX/TFLite model artifacts (reproducible via export scripts)
+spikes/**/*.mlpackage
+spikes/**/*.mlmodelc
+spikes/**/*.onnx
+spikes/**/*.tflite
+
+# superpowers worktrees
+.worktrees/

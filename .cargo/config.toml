@@ -1,0 +1,16 @@
+# ML-KEM-768 handshake derivation builds large key + ciphertext buffers
+# (2400-byte secret keys, ~1088-byte KEM ciphertexts) as stack locals. In
+# unoptimized debug test builds these are not elided, so a test that runs
+# several derivations exceeds the 2 MiB default test-thread stack on Linux and
+# aborts with a stack overflow (e.g.
+# core/tests/pqxdh_equivalence.rs::distinct_handshakes_yield_distinct_srks).
+# macOS default thread stacks are larger, which is why this only surfaces on
+# the Linux CI runners.
+#
+# Raise the per-thread minimum stack for every `cargo test` invocation (core-ci
+# `--all-features`, bindings-ci `--workspace`, and local runs) from one place,
+# instead of duplicating an env var across CI jobs. Cargo exports this to the
+# test-harness process, which reads it when spawning test threads. An explicit
+# RUST_MIN_STACK in the environment still wins (no `force`).
+[env]
+RUST_MIN_STACK = "16777216"

@@ -1,0 +1,22 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.chencang.android",
+      "sha256_cert_fingerprints": [
+        "02:AE:DC:63:FB:B7:79:3C:BA:5A:31:36:23:54:87:10:AA:E9:4A:C6:E7:8C:D3:AF:CA:D3:9B:16:6F:A5:70:06"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.chencang.android.debug",
+      "sha256_cert_fingerprints": [
+        "54:24:1B:19:13:0D:D6:D8:B8:D4:CD:33:36:3C:20:62:B9:10:FB:80:78:1E:D6:EE:C5:3F:A7:3D:FB:90:BF:DC"
+      ]
+    }
+  }
+]

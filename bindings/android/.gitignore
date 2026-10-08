@@ -1,0 +1,6 @@
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+chencang-core-android/src/main/jniLibs/

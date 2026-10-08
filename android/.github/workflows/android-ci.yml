@@ -1,0 +1,181 @@
+name: Android CI
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'android/**'
+      - 'bindings/**'
+      - 'core/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  pull_request:
+    paths:
+      - 'android/**'
+      - 'bindings/**'
+      - 'core/**'
+
+env:
+  JAVA_VERSION: '17'
+  ANDROID_API_LEVEL: '35'
+  CACHE_VERSION: 'v1'
+
+# Note on security: all `run:` blocks here use only trusted context values
+# (github.sha, github.run_id, secrets, env constants). No untrusted user input is
+# interpolated into shell commands. PR titles/bodies/branch names are never used.
+
+jobs:
+  build-aar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: cargo-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build chencang-core .so files via xtask
+        run: cargo run -p xtask -- build-android
+
+      - name: Publish AAR to Maven Local
+        working-directory: bindings/android
+        run: ./gradlew :chencang-core-android:publishReleasePublicationToMavenLocalRepository
+
+      - name: Cache Maven Local (app.chencang)
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.m2/repository/app/chencang
+          key: m2-chencang-${{ env.CACHE_VERSION }}-${{ github.sha }}
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: build-aar
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Restore Maven Local cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.m2/repository/app/chencang
+          key: m2-chencang-${{ env.CACHE_VERSION }}-${{ github.sha }}
+          fail-on-cache-miss: true
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Run unit tests
+        working-directory: android
+        run: ./gradlew :shared:testDebugUnitTest :app:testDebugUnitTest
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-reports
+          path: android/**/build/reports/tests/
+
+  assemble-debug:
+    runs-on: ubuntu-latest
+    needs: build-aar
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Restore Maven Local cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.m2/repository/app/chencang
+          key: m2-chencang-${{ env.CACHE_VERSION }}-${{ github.sha }}
+          fail-on-cache-miss: true
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Assemble debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+
+  instrumented-tests:
+    runs-on: ubuntu-latest
+    needs: build-aar
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        api-level: [35]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Restore Maven Local cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.m2/repository/app/chencang
+          key: m2-chencang-${{ env.CACHE_VERSION }}-${{ github.sha }}
+          fail-on-cache-miss: true
+      - name: Run instrumented tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            cd android
+            ./gradlew :shared:connectedDebugAndroidTest :app:connectedDebugAndroidTest
+      - name: Upload instrumented test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumented-test-reports-api${{ matrix.api-level }}
+          path: android/**/build/reports/androidTests/connected/

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <radialGradient id="g" cx="50%" cy="0%" r="80%">
+      <stop offset="0%" stop-color="#163528"/>
+      <stop offset="100%" stop-color="#0c1a14"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <g font-family="PingFang SC, Microsoft YaHei, sans-serif" text-anchor="middle">
+    <text x="600" y="150" font-size="30" letter-spacing="14" fill="#d8b65a">明 修 栈 道 · 暗 度 陈 仓</text>
+    <text x="600" y="300" font-size="92" font-weight="800" fill="#e8f0eb">陈仓</text>
+    <text x="600" y="380" font-size="40" font-weight="700" fill="#2fbf8f">端到端加密密信</text>
+    <text x="600" y="460" font-size="30" fill="#9fb4a8">只有对方能解开的消息</text>
+    <text x="600" y="560" font-size="24" fill="#9fb4a8">陈仓 · 开源端到端加密</text>
+  </g>
+</svg>

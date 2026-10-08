@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["NJT954Q3RH.app.chencang.companion"],
+        "components": [{ "/": "/p/*", "comment": "配对链接：配对码在 # 后面" }]
+      }
+    ]
+  }
+}

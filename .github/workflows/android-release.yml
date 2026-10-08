@@ -1,0 +1,174 @@
+name: chencang-android Release APK
+
+# Builds a genuinely release-signed Android APK end-to-end and, when triggered
+# by an `android-v*` tag, attaches it to a GitHub Release.
+#
+# The app module (:app) resolves the Rust crypto core as the
+# `app.chencang:chencang-core-android` AAR from mavenLocal (~/.m2). That AAR is
+# NOT committed — it is produced by building the Rust staticlib for the three
+# Android ABIs (cargo-ndk) and assembling it via Gradle. So this job must,
+# in order:
+#   1. build the native libs + AAR         (cargo run -p xtask -- build-android)
+#   2. publish the AAR to mavenLocal        (:chencang-core-android:publishToMavenLocal)
+#   3. restore the release keystore         (from repo secrets -> keystore.properties)
+#   4. assemble the signed direct APK + Play AAB (:app:assembleDirectRelease, :app:bundlePlayRelease)
+#   5. PROVE it is release-signed           (apksigner cert fingerprint assertion)
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'android-v*'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  NDK_VERSION: '27.1.12297006'
+  # SHA-256 of the chencang release signing certificate. The built APK MUST be
+  # signed by exactly this cert, otherwise the build is a debug-signed impostor
+  # and we fail loudly. (Fingerprint of ~/.chencang-keystore/chencang-release.jks.)
+  EXPECTED_CERT_SHA256: '02aedc63fbb7793cba5a313623548710aae94ac6e78cd3afcad39b166fa57006'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build signed release APK
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: android-release
+
+      - name: Install Android SDK + NDK ${{ env.NDK_VERSION }}
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-34 platforms;android-36 build-tools;34.0.0 build-tools;36.0.0 ndk;${{ env.NDK_VERSION }}
+
+      - name: Export ANDROID_NDK_HOME
+        run: echo "ANDROID_NDK_HOME=${ANDROID_SDK_ROOT}/ndk/${NDK_VERSION}" >> "$GITHUB_ENV"
+
+      - name: Install cargo-ndk
+        run: cargo install --locked cargo-ndk
+
+      # Step 1 - Rust staticlib for 3 ABIs + assemble the core AAR.
+      - name: Build Android native libs + core AAR
+        run: cargo run -p xtask -- build-android
+
+      # Step 2 - publish the freshly built AAR into ~/.m2 so :app can resolve it.
+      - name: Publish core AAR to mavenLocal
+        working-directory: bindings/android
+        run: ./gradlew :chencang-core-android:publishToMavenLocal --console=plain
+
+      # Step 3 - reconstruct the release keystore from secrets. Written into
+      # keystore.properties, which app/build.gradle.kts reads (falling back to
+      # debug signing only when the file is absent).
+      - name: Restore release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_BASE64:-}" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret is empty - cannot release-sign."
+            exit 1
+          fi
+          KS="${RUNNER_TEMP}/chencang-release.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KS"
+          cat > android/keystore.properties <<EOF
+          storeFile=${KS}
+          storePassword=${KEYSTORE_PASSWORD}
+          keyAlias=${KEY_ALIAS}
+          keyPassword=${KEY_PASSWORD}
+          EOF
+          echo "Keystore restored to ${KS} ($(wc -c < "$KS") bytes)"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Guard UI source against Han literals
+        run: node android/scripts/check-ui-literals.mjs .
+
+      # Step 4 - assemble the signed release APK.
+      - name: Assemble release APK
+        working-directory: android
+        run: ./gradlew :app:assembleDirectRelease :app:bundlePlayRelease --console=plain
+
+      # Step 5 - prove the APK is signed by the expected release cert (not debug).
+      - name: Verify release signature
+        run: |
+          set -euo pipefail
+          APK=android/app/build/outputs/apk/direct/release/app-direct-release.apk
+          APKSIGNER="${ANDROID_SDK_ROOT}/build-tools/34.0.0/apksigner"
+          bytes=$(wc -c < "$APK")
+          echo "APK size = $((bytes/1024/1024)) MB"
+          echo "Verifying $APK"
+          "$APKSIGNER" verify --print-certs -v "$APK"
+          got=$("$APKSIGNER" verify --print-certs "$APK" \
+            | grep -ioE 'certificate SHA-256 digest: [0-9a-f]+' \
+            | grep -ioE '[0-9a-f]{64}' | head -1)
+          echo "cert SHA-256 = ${got:-<none>}"
+          if [ "$got" != "$EXPECTED_CERT_SHA256" ]; then
+            echo "::error::APK cert ${got:-<none>} != expected ${EXPECTED_CERT_SHA256} (debug-signed or wrong key)."
+            exit 1
+          fi
+          echo "Release signature confirmed."
+
+      # Rename outputs: chencang-<ver>.apk (+ .sha256) and chencang-<ver>-play.aab.
+      # VERSION comes from the tag (android-v1.0.0 -> 1.0.0) or, for
+      # manual runs, from versionName in app/build.gradle.kts.
+      - name: Stage release files
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/android-v* ]]; then
+            VERSION="${GITHUB_REF_NAME#android-v}"
+          else
+            VERSION="$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' android/app/build.gradle.kts | head -1)"
+          fi
+          [ -n "$VERSION" ] || { echo "::error::cannot derive VERSION"; exit 1; }
+          GRADLE_VERSION="$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' android/app/build.gradle.kts | head -1)"
+          if [ "$VERSION" != "$GRADLE_VERSION" ]; then
+            echo "::error::tag version ${VERSION} != versionName ${GRADLE_VERSION} in build.gradle.kts"
+            exit 1
+          fi
+          OUT=release-out
+          mkdir -p "$OUT"
+          cp android/app/build/outputs/apk/direct/release/app-direct-release.apk "$OUT/chencang-${VERSION}.apk"
+          cp android/app/build/outputs/bundle/playRelease/app-play-release.aab "$OUT/chencang-${VERSION}-play.aab"
+          (cd "$OUT" && shasum -a 256 "chencang-${VERSION}.apk" > "chencang-${VERSION}.apk.sha256")
+          cat "$OUT/chencang-${VERSION}.apk.sha256"
+          ls -l "$OUT"
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chencang-android-release
+          path: release-out/*
+          if-no-files-found: error
+
+      # When triggered by an android-v* tag, attach the files to a GitHub Release.
+      - name: Attach files to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/android-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') }}
+          files: |
+            release-out/chencang-*.apk
+            release-out/chencang-*.apk.sha256
+            release-out/chencang-*-play.aab
+          fail_on_unmatched_files: true

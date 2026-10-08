@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Face-to-face pairing: scan the peer's invite QR. Camera is optional so the
+         paste flow still installs on camera-less devices. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+
+    <!-- 富媒体（spec 2026-09-25 §2.5）：只有 shared/media/MediaTransport 用它上传/下载
+         加密 blob；文字的封缄/启缄/配对依旧零网络（NetworkIsolationGuardTest 兜底）。 -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 按住说话：首次按下时才申请。 -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- 媒体后台上传（spec 2026-09-30 §1.1）：API < 31 的加急 WorkManager 任务跑在 dataSync 前台服务里。
+         两个都是普通权限，安装即授予、不弹窗；不申请通知权限。 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+
+    <application
+        android:name=".CcApp"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:theme="@style/Theme.Chencang"
+        android:supportsRtl="true"
+        android:allowBackup="false"
+        android:fullBackupContent="false">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Chencang">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+
+        </activity>
+
+        <!--
+          Intake from other apps: the text-selection menu (PROCESS_TEXT) and the system share
+          sheet (SEND text/plain) both go through IncomingIntake → IntakeRouting.
+        -->
+        <activity
+            android:name=".receive.ProcessTextActivity"
+            android:label="@string/process_text_label"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <!-- Text shared from another app's share sheet: same intake as the selection menu. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <!-- App Links: the pairing card's QR / link https://<site>/p/#<code> opens us directly
+                 (system camera, browser). Same intake as pasted text. Hosts must match assetlinks.json. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="d3nnqcgewrb4f0.cloudfront.net" />
+                <data android:host="dzr6ldib1w492.cloudfront.net" />
+                <data android:host="dee2wx7h03hqb.cloudfront.net" />
+                <data android:pathPrefix="/p/" />
+            </intent-filter>
+        </activity>
+
+        <!-- 分享热桥(spec 2026-09-30 §5.2)：系统分享面板选定目标 App 后经我们的 PendingIntent
+             回调到这里，才标「已送出」。不导出：只有自己的 PendingIntent 能投递。 -->
+        <receiver
+            android:name=".share.ShareCompletionReceiver"
+            android:exported="false"/>
+
+        <!-- Pairing code share callback: the share sheet reports the chosen target here, then the
+             invite / response is marked shared and an open wizard moves on. Not exported. -->
+        <receiver
+            android:name=".share.PairingShareReceiver"
+            android:exported="false"/>
+
+        <!-- WorkManager 自带的前台服务：声明类型 dataSync（targetSdk 34+ 必须）。 -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge"/>
+
+        <!-- WorkManager 按需初始化（CcApp 实现 Configuration.Provider）：摘掉默认的 startup 初始化器，
+             保证进程被杀后由 WorkManager 拉起时，CcApp.onCreate 先装好上传引擎。 -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove"/>
+        </provider>
+
+        <!-- ➕ 面板「拍照 / 录像」：系统相机把结果写进 cacheDir/capture/。 -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.media"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"/>
+        </provider>
+
+    </application>
+
+</manifest>

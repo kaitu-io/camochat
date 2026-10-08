@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "chencang media upload rate limit (CloudFront scope, us-east-1). Source: see /source on the distributions"
+Resources:
+  Acl:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: chencang-media-upload
+      Scope: CLOUDFRONT
+      DefaultAction: { Allow: {} }
+      VisibilityConfig: { SampledRequestsEnabled: false, CloudWatchMetricsEnabled: true, MetricName: chencang-media-upload }
+      Rules:
+        - Name: upload-rate-per-ip
+          Priority: 0
+          Action: { Block: { CustomResponse: { ResponseCode: 429 } } }
+          VisibilityConfig: { SampledRequestsEnabled: false, CloudWatchMetricsEnabled: true, MetricName: upload-rate-per-ip }
+          Statement:
+            RateBasedStatement:
+              Limit: 60
+              EvaluationWindowSec: 300
+              AggregateKeyType: IP
+              ScopeDownStatement:
+                ByteMatchStatement:
+                  FieldToMatch: { UriPath: {} }
+                  PositionalConstraint: STARTS_WITH
+                  SearchString: /api/upload
+                  TextTransformations: [ { Priority: 0, Type: NONE } ]
+Outputs:
+  AclArn: { Value: !GetAtt Acl.Arn }

@@ -1,0 +1,10 @@
+[advisories]
+yanked = "warn"
+vulnerability = "deny"
+
+[licenses]
+allow = ["Apache-2.0", "MIT", "BSD-3-Clause", "BSD-2-Clause", "ISC", "Unicode-DFS-2016"]
+confidence-threshold = 0.93
+
+[bans]
+multiple-versions = "warn"

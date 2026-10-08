@@ -1,0 +1,351 @@
+// chencang.udl — public surface area exposed to Swift + Kotlin
+
+namespace chencang {
+  // Top-level factory functions
+  SecretIdentity generate_secret_identity();
+
+  Fingerprint fingerprint_of_public(PublicIdentity identity);
+
+  // Handshake entry points
+  [Throws=ChencangError]
+  InitiatorHandshakeOutput derive_initiator_handshake(
+    SecretIdentity bob_ik,
+    PreKeyBundle alice_bundle
+  );
+
+  [Throws=ChencangError]
+  bytes derive_responder_handshake(
+    SecretIdentity alice_ik,
+    SecretSignedPreKey alice_spk,
+    SecretOneTimePreKey? alice_opk,
+    PublicIdentity bob_ik_pub,
+    bytes bob_ek_x_pub,
+    bytes bob_ek_kem_pub,
+    bytes kem_ct_to_spk,
+    bytes kem_ct_to_ik,
+    bytes? kem_ct_to_opk,
+    bytes pairing_nonce
+  );
+
+  // === Classical (suite 0x01) in-band X3DH + key confirmation ===
+
+  [Throws=ChencangError]
+  ClassicalInitiatorOutput derive_initiator_classical(
+    SecretIdentity bob_ik,
+    ClassicalPreKeyBundle alice_bundle
+  );
+
+  [Throws=ChencangError]
+  ClassicalResponderOutput derive_responder_classical(
+    SecretIdentity alice_ik,
+    SecretSignedPreKey alice_spk,
+    SecretOneTimePreKey? alice_opk,
+    ClassicalPublicIdentity bob_ik,
+    bytes bob_ek_x25519_pub,
+    u32? opk_id,
+    bytes pairing_nonce
+  );
+
+  // Key-confirmation MAC: derive_kc(srk) then keyed-BLAKE2b over (transcript || who).
+  [Throws=ChencangError]
+  bytes compute_confirm_tag(bytes srk, bytes transcript, u8 who);
+
+  [Throws=ChencangError]
+  boolean verify_confirm_tag(bytes srk, bytes transcript, u8 who, bytes tag);
+
+  // Ed25519 verification of a signed config payload (domain-separated); false on any failure.
+  boolean verify_signed_config(bytes payload, bytes sig);
+
+  // The `who` byte constants (0x42 initiator / 0x41 responder).
+  u8 confirm_who_initiator();
+  u8 confirm_who_responder();
+
+  // === In-band pairing wire (deterministic integer-key CBOR; single source) ===
+
+  // Round-1: encode/decode the classical prekey bundle (Alice -> Bob).
+  [Throws=ChencangError]
+  bytes encode_classical_bundle(ClassicalPreKeyBundle bundle);
+
+  [Throws=ChencangError]
+  ClassicalPreKeyBundle decode_classical_bundle(bytes bytes);
+
+  // Round-2: encode/decode the classical in-band handshake header (Bob -> Alice).
+  [Throws=ChencangError]
+  bytes encode_classical_header(ClassicalInbandHeader header);
+
+  [Throws=ChencangError]
+  ClassicalInbandHeader decode_classical_header(bytes bytes);
+
+  // === V1 wire codec (replaces V0 CBOR MessagePayload + z-base32) ===
+
+  // L2: build a TEXT frame (0x10) from a UTF-8 string.
+  bytes encode_text_frame(string text);
+
+  // L2: parse an L2 frame into a typed variant.
+  [Throws=ChencangError]
+  DecodedMessage decode_frame(bytes bytes);
+
+  // L2: build a MEDIA_REF frame (0x40) carrying 1..=9 blob references.
+  [Throws=ChencangError]
+  bytes encode_media_ref_frame(sequence<MediaRef> refs);
+
+  // L4: wrap raw L3 ciphertext bytes with `🔒` + CJK14.
+  string encode_wire(bytes ciphertext);
+
+  // L4: strip `🔒` + CJK14 → raw L3 ciphertext bytes.
+  [Throws=ChencangError]
+  bytes decode_wire(string s);
+
+  // HKDF-Expand-SHA256 derivation from a 32-byte CSPRNG blob_secret.
+  [Throws=ChencangError]
+  BlobMaterial derive_blob_material(bytes blob_secret);
+
+  // === Rich-media blob (spec 2026-09-25) / safety emoji ===
+
+  [Throws=ChencangError]
+  MediaBlob encrypt_media_blob(bytes plaintext, u8 kind);
+
+  [Throws=ChencangError]
+  bytes decrypt_media_blob(bytes blob, bytes blob_secret, u8 expected_kind);
+
+  [Throws=ChencangError]
+  string media_blob_id(bytes blob_secret);
+
+  [Throws=ChencangError]
+  sequence<string> derive_safety_emoji(bytes session_secret);
+};
+
+[Error]
+enum ChencangError {
+  "InvalidLength",
+  "UnsupportedSuite",
+  "UnsupportedVersion",
+  "AeadFailed",
+  "SignatureFailed",
+  "Decoding",
+  "Internal",
+};
+
+// === Identity types ===
+
+interface SecretIdentity {
+  constructor();
+  PublicIdentity public_identity();
+  bytes serialize_for_local_storage();
+  [Name=from_local_storage, Throws=ChencangError]
+  constructor(bytes data);
+
+  // Sign arbitrary bytes with the Ed25519 IK key. Returns a 64-byte
+  // signature. Not used by the current apps (there is no server).
+  bytes sign_ed25519_ik(bytes message);
+};
+
+dictionary PublicIdentity {
+  bytes ik_dh_x25519;       // 32 bytes
+  bytes ik_sig_ed25519;     // 32 bytes
+  bytes ik_kem_mlkem768;    // 1184 bytes
+  bytes ik_sig_mldsa65;     // 1952 bytes
+};
+
+dictionary Fingerprint {
+  bytes value;              // 16 bytes
+  string hex;               // 32 hex chars
+};
+
+// === PreKey types ===
+
+interface SecretSignedPreKey {
+  [Throws=ChencangError]
+  constructor(SecretIdentity ik, u32 spk_version);
+  SignedPreKeyPublic public_form();
+  bytes serialize();
+  [Name=from_serialized, Throws=ChencangError]
+  constructor(bytes data);
+};
+
+dictionary SignedPreKeyPublic {
+  u32 spk_version;
+  bytes spk_x25519;            // 32 bytes
+  bytes spk_mlkem768;          // 1184 bytes
+  bytes ed25519_sig;           // 64 bytes — hybrid (over x25519||mlkem||epoch)
+  bytes ed25519_sig_classical; // 64 bytes — classical (over x25519||epoch)
+  bytes mldsa65_sig;           // variable (3309 bytes)
+};
+
+interface SecretOneTimePreKey {
+  constructor(u32 opk_index);
+  OneTimePreKeyPublic public_form();
+};
+
+dictionary OneTimePreKeyPublic {
+  u32 opk_index;
+  bytes opk_x25519;
+  bytes opk_mlkem768;
+};
+
+dictionary PreKeyBundle {
+  PublicIdentity ik;
+  SignedPreKeyPublic spk;
+  OneTimePreKeyPublic? opk;
+  string inviter_username;
+  bytes invite_id;          // 16 bytes
+  bytes pairing_nonce;      // 16 bytes
+};
+
+// === Handshake outputs ===
+
+dictionary InitiatorHandshakeOutput {
+  bytes session_root_key;   // 32 bytes
+  PublicIdentity bob_identity_public;
+  bytes ek_x25519_pub;
+  bytes ek_mlkem_pub;
+  bytes kem_ct_to_spk;
+  bytes kem_ct_to_ik;
+  bytes? kem_ct_to_opk;
+  bytes? ek_x25519_secret;  // 32 bytes — initiator only; null on responder side
+  bytes? ek_mlkem_secret;   // 2400 bytes — initiator only; null on responder side
+};
+
+// === Classical (suite 0x01) bundle + X3DH outputs ===
+
+dictionary ClassicalPublicIdentity {
+  bytes ed25519;            // 32 bytes
+  bytes x25519;             // 32 bytes
+};
+
+dictionary ClassicalSignedPreKey {
+  bytes x25519;             // 32 bytes
+  bytes sig_ed25519;        // 64 bytes — classical (over x25519||epoch)
+  u32 epoch;
+};
+
+dictionary ClassicalOneTimePreKey {
+  u32 id;
+  bytes x25519;             // 32 bytes
+};
+
+dictionary ClassicalPreKeyBundle {
+  u8 version;               // must be 0x01
+  u8 suite_id;              // must be 0x01
+  ClassicalPublicIdentity ik;
+  ClassicalSignedPreKey spk;
+  ClassicalOneTimePreKey? opk;
+  bytes pairing_nonce;      // 16 bytes
+  string inviter_username;
+};
+
+dictionary ClassicalInbandHeader {
+  u8 version;               // must be 0x01
+  u8 suite_id;              // must be 0x01
+  ClassicalPublicIdentity bob_ik;
+  bytes ek_x25519_pub;      // 32 bytes
+  bytes session_id;         // 5 bytes
+  bytes confirm_b;          // 32 bytes
+  string? bob_display_name;
+};
+
+dictionary ClassicalInitiatorOutput {
+  bytes session_root_key;   // 32 bytes — local only
+  PublicIdentity bob_ik;
+  bytes ek_x25519_pub;      // 32 bytes
+  bytes ek_x25519_secret;   // 32 bytes — local only; seeds the send ratchet
+  bytes transcript;         // 32 bytes
+};
+
+dictionary ClassicalResponderOutput {
+  bytes session_root_key;   // 32 bytes
+  bytes transcript;         // 32 bytes
+};
+
+// === V1 wire-protocol types ===
+
+// Decoded L2 frame. Kotlin/Swift consumers should treat this as an open
+// enum (match exhaustively but expect new cases over time).
+[Enum]
+interface DecodedMessage {
+  Text(string value);
+  Media(sequence<MediaRef> refs);
+};
+
+// HKDF-Expand-SHA256 derivation outputs.
+dictionary BlobMaterial {
+  bytes blob_id;        // 16 bytes
+  bytes blob_key;       // 32 bytes
+  bytes blob_nonce;     // 24 bytes
+};
+
+// Output of encrypt_media_blob: freshly generated secret + sealed blob + id.
+dictionary MediaBlob {
+  bytes blob_secret; // 32 bytes, CSPRNG-generated, never reused
+  bytes blob;        // complete .cca blob (header + ciphertext + tag)
+  string blob_id;    // media_blob_id(blob_secret), precomputed
+};
+
+// One encrypted-blob reference inside a MEDIA_REF frame.
+dictionary MediaRef {
+  u8 kind;          // 1 voice / 2 image / 3 video
+  u16 dur_ms;       // 0 for images
+  u16 width;        // 0 for voice
+  u16 height;       // 0 for voice
+  u32 byte_len;     // total .cca size
+  bytes blob_secret; // 32 bytes
+};
+
+// === Session ===
+
+interface Session {
+  [Name=initiator_after_handshake, Throws=ChencangError]
+  constructor(
+    bytes session_root_key,
+    bytes session_id,
+    PublicIdentity alice_ik_public,
+    bytes ek_x25519_secret,
+    bytes ek_mlkem_secret
+  );
+
+  [Name=responder_after_handshake, Throws=ChencangError]
+  constructor(
+    bytes session_root_key,
+    bytes session_id,
+    InitiatorHandshakeOutput initiator_output
+  );
+
+  // === Classical (suite 0x01) constructors — X25519-only, no ML-KEM ===
+
+  [Name=initiator_after_handshake_classical, Throws=ChencangError]
+  constructor(
+    bytes session_root_key,
+    bytes session_id,
+    bytes alice_ik_dh_x25519,
+    bytes ek_x25519_secret
+  );
+
+  [Name=responder_after_handshake_classical, Throws=ChencangError]
+  constructor(
+    bytes session_root_key,
+    bytes session_id,
+    bytes bob_ek_x25519_pub
+  );
+
+  // === V1 entry points (raw bytes) — used by the apps' message pipeline ===
+
+  [Throws=ChencangError]
+  bytes encrypt_to_bytes(bytes plaintext);
+
+  [Throws=ChencangError]
+  bytes decrypt_from_bytes(bytes ciphertext);
+
+  // === Legacy V0 entry points (z-base32) — kept for facade round-trip
+  //     test only; new code MUST use *_bytes variants above. ===
+
+  [Throws=ChencangError]
+  string encrypt(bytes plaintext);
+
+  [Throws=ChencangError]
+  bytes decrypt(string wire_text);
+
+  bytes serialize_state();
+
+  [Name=from_serialized_state, Throws=ChencangError]
+  constructor(bytes state);
+};

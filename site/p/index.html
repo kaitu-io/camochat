@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>有人邀请你用陈仓加密聊天</title>
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<style>
+  :root{
+    --bg:#0c1a14; --surface:#112a20; --surface-2:#163528;
+    --line:#1f4334; --text:#e8f0eb; --muted:#9fb4a8;
+    --jade:#2fbf8f; --jade-dim:#1f8e6a; --gold:#d8b65a;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.7; -webkit-font-smoothing:antialiased;
+    padding:40px 20px 48px;
+  }
+  .wrap{max-width:440px; margin:0 auto; text-align:center}
+  .step{display:inline-block; font-size:13px; font-weight:700; color:var(--jade);
+    border:1px solid var(--jade-dim); border-radius:999px; padding:2px 12px; margin-bottom:12px}
+  .lock{font-size:44px; margin-bottom:6px}
+  h1{font-size:22px; margin:0 0 10px; font-weight:800; word-break:break-word}
+  h2{font-size:16px; margin:0 0 12px; font-weight:700; color:var(--muted)}
+  p.sub{color:var(--muted); font-size:15px; margin:0 0 24px}
+  section{margin-bottom:28px}
+  .btn{display:flex; width:100%; align-items:center; justify-content:center; gap:8px; padding:14px 20px;
+    border-radius:12px; font-weight:600; font-size:17px; border:1px solid transparent; text-decoration:none;
+    cursor:pointer; font-family:inherit}
+  .btn.primary{background:var(--jade); color:#04130d}
+  .btn.primary:active{background:#3ad29f}
+  .btn.secondary{background:var(--surface); color:var(--text); border-color:var(--line)}
+  .dl{display:flex; flex-direction:column; gap:12px}
+  .status{min-height:1.7em; margin:10px 0 0; font-size:15px; color:var(--jade); font-weight:600}
+  .box{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px;
+    font-size:15px; text-align:left; margin-bottom:24px}
+  .box.warn{border-color:var(--gold)}
+  .note{color:var(--muted); font-size:13px; margin:10px 0 0}
+  .link{background:none; border:0; padding:0; color:var(--muted); font:inherit; font-size:14px;
+    text-decoration:underline; cursor:pointer}
+  #manual textarea{width:100%; min-height:96px; margin-top:8px; background:var(--surface-2); color:var(--text);
+    border:1px solid var(--line); border-radius:8px; padding:8px; font-size:12px; word-break:break-all}
+  .privacy{color:var(--muted); font-size:13px; margin:0 0 20px}
+  footer{font-size:13px; color:var(--muted)}
+  footer a{color:var(--muted)}
+  [hidden]{display:none !important}
+
+  /* 内置浏览器（微信 / QQ 等）：指向右上角菜单的引导 */
+  #guide{position:relative; padding-top:64px}
+  #guide .arrow{position:fixed; top:6px; right:18px; font-size:48px; line-height:1; color:var(--gold);
+    animation:nudge 1.2s ease-in-out infinite}
+  @keyframes nudge{0%,100%{transform:translate(0,0)}50%{transform:translate(4px,-6px)}}
+  @media (prefers-reduced-motion: reduce){#guide .arrow{animation:none}}
+  .steps{list-style:none; margin:0 0 20px; padding:0; text-align:left}
+  .steps li{display:flex; gap:12px; align-items:flex-start; background:var(--surface); border:1px solid var(--line);
+    border-radius:12px; padding:14px 16px; margin-bottom:10px; font-size:16px}
+  .steps .n{flex:none; width:26px; height:26px; border-radius:50%; background:var(--jade); color:#04130d;
+    font-weight:800; font-size:14px; display:flex; align-items:center; justify-content:center; margin-top:2px}
+  .steps strong{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 内置浏览器：先引导到系统浏览器（那里才能打开陈仓、下载安装） -->
+  <div id="guide" hidden>
+    <div class="arrow" aria-hidden="true">↗</div>
+    <div class="step" id="g-step">第 1 步 · 共 2 步</div>
+    <h1 id="g-title">有人邀请你用陈仓加密聊天</h1>
+    <p class="sub" id="g-sub">消息在手机上加密，只有你们俩看得到。</p>
+    <ol class="steps">
+      <li><span class="n">1</span><span>点右上角的 <strong>···</strong></span></li>
+      <li><span class="n">2</span><span>选 <strong id="g-open">「在浏览器中打开」</strong></span></li>
+      <li><span class="n">3</span><span id="g-then">装了陈仓会直接打开；还没装就在浏览器里下载</span></li>
+    </ol>
+    <p class="note">这里是聊天软件里的网页，打不开陈仓，也下载不了安装包。</p>
+    <p class="note"><button class="link" id="g-copy" type="button">没法换浏览器？复制配对码</button></p>
+  </div>
+
+  <!-- 系统浏览器 -->
+  <div id="main" hidden>
+    <div class="step" id="step">第 1 步 · 共 2 步</div>
+    <div class="lock">🔒</div>
+    <h1 id="title">有人邀请你用陈仓加密聊天</h1>
+    <p class="sub" id="sub">消息在手机上加密，只有你们俩看得到。</p>
+
+    <div class="box warn" id="not-opened" hidden>好像还没装陈仓。先在下面下载安装，装好后回到这一页，再点「打开陈仓」。</div>
+
+    <section id="open-area">
+      <a class="btn primary" id="open" href="#">打开陈仓</a>
+      <p class="note" id="open-note">已经装了陈仓，点这里会直接进入添加。</p>
+    </section>
+
+    <section id="install">
+      <h2>还没装陈仓？</h2>
+      <div class="dl">
+        <a class="btn secondary" id="apk" href="../dl/chencang-latest.apk" download>下载陈仓（Android）</a>
+        <a class="btn secondary" id="ios" href="https://apps.apple.com/app/id6776736705">下载陈仓（iPhone）</a>
+      </div>
+      <p class="note">装好后回到这一页，点「打开陈仓」。</p>
+    </section>
+
+    <p class="note"><button class="link" id="copy" type="button">打开没反应？复制配对码</button></p>
+  </div>
+
+  <div id="copied" class="box" hidden>
+    <span id="copied-text">已复制。打开陈仓，点「粘贴」就能加上对方。</span>
+    <div id="manual" hidden>没能自动复制。请长按下面的文字，全选后复制，再打开陈仓点「粘贴」。
+      <textarea id="manual-text" readonly></textarea>
+    </div>
+  </div>
+
+  <div class="box warn" id="missing" hidden>
+    这个页面没有带上配对码。请回到聊天里，长按对方发来的二维码图片，选「识别图中二维码」。
+  </div>
+
+  <p class="privacy">配对码在网址 # 号后面，只在你的手机上读取，不会发给这个网站。</p>
+  <footer>中转服务器全部源码：<a href="../source">本站源码页</a></footer>
+</div>
+<script>
+(function () {
+  // 三台站点互为「打开陈仓」的跳板：通用链接 / App Links 只在跨站点跳转时唤起 App，
+  // 同站内点链接只会在浏览器里刷新。主机必须与两端 App 里登记的一致。
+  var HOSTS = ['d3nnqcgewrb4f0.cloudfront.net', 'dzr6ldib1w492.cloudfront.net', 'dee2wx7h03hqb.cloudfront.net'];
+  var NAME_MAX = 20;
+
+  function bytesOf(frag) {
+    if (!/^[A-Za-z0-9_-]+$/.test(frag) || frag.length % 4 === 1) return null;
+    var b64 = frag.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    var bin;
+    try { bin = atob(b64); } catch (e) { return null; }
+    var out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  // 信封：0xCB, 类型(01 邀请 / 02 回执), CBOR 整数 key 的 map。
+  // 昵称：邀请 key 11（inviter_username），回执 key 8（bob 名字）。只读不验，解不出就不显示名字。
+  function nameOf(b, kind) {
+    var want = kind === 'invite' ? 11 : 8;
+    var p = 2;
+    // 坏数据一律抛出：每读一个字节前查边界；长度、条目数不得超过剩余字节（防构造的超大 map 卡死页面）。
+    function need(n) { if (!(p + n <= b.length)) throw 0; }
+    function head() {
+      need(1);
+      var ib = b[p++], major = ib >> 5, info = ib & 31, val;
+      if (info < 24) val = info;
+      else if (info === 24) { need(1); val = b[p++]; }
+      else if (info === 25) { need(2); val = (b[p] << 8) | b[p + 1]; p += 2; }
+      else if (info === 26) { need(4); val = ((b[p] << 24) >>> 0) + (b[p + 1] << 16) + (b[p + 2] << 8) + b[p + 3]; p += 4; }
+      else if (info === 27) { need(8); p += 8; if (major >= 2) throw 0; val = 0; }  // 只允许 64 位整数值
+      else throw 0;
+      if (major >= 2 && major <= 5 && val > b.length - p) throw 0;
+      return { major: major, val: val };
+    }
+    function skip(h) {
+      if (h.major === 2 || h.major === 3) { need(h.val); p += h.val; }
+      else if (h.major === 4) for (var i = 0; i < h.val; i++) skip(head());
+      else if (h.major === 5) for (var j = 0; j < h.val * 2; j++) skip(head());
+      else if (h.major === 6) skip(head());
+    }
+    try {
+      var m = head();
+      if (m.major !== 5) return '';
+      for (var i = 0; i < m.val; i++) {
+        var k = head();
+        var v = head();
+        if (k.major === 0 && k.val === want && v.major === 3) {
+          need(v.val);
+          var s = new TextDecoder('utf-8', { fatal: true }).decode(b.subarray(p, p + v.val));
+          // 去掉控制字符和双向排版控制符（防止昵称把标题文字顺序打乱）。
+          s = s.replace(/[\u0000-\u001f\u007f\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '').trim();
+          var chars = Array.from(s);
+          return chars.length > NAME_MAX ? chars.slice(0, NAME_MAX).join('') + '…' : s;
+        }
+        skip(v);
+      }
+    } catch (e) {}
+    return '';
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+  var ua = navigator.userAgent;
+  var isAndroid = /Android/i.test(ua);
+  // 聊天软件的内置浏览器：唤不起 App，安卓微信还拦安装包下载。
+  var inApp = /MicroMessenger|wxwork|\bQQ\/|\bTIM\/|Weibo|DingTalk|Lark|Feishu/i.test(ua);
+
+  var frag = location.hash.replace(/^#/, '');
+  var bytes = frag ? bytesOf(frag) : null;
+  var kind = null;
+  if (bytes && bytes.length >= 3 && bytes[0] === 0xCB) {
+    if (bytes[1] === 0x01) kind = 'invite';
+    else if (bytes[1] === 0x02) kind = 'response';
+  }
+  if (!kind) { $('missing').hidden = false; return; }
+
+  var name = nameOf(bytes, kind);
+  var text = location.origin + location.pathname + '#' + frag;
+  var title, sub, step, done;
+  if (kind === 'invite') {
+    title = name ? name + ' 邀请你用陈仓加密聊天' : '有人邀请你用陈仓加密聊天';
+    sub = '消息在手机上加密，只有你们俩看得到。';
+    step = '第 1 步 · 共 2 步';
+    done = '已复制。打开陈仓，点「粘贴」就能加上对方。加好后会得到一张回执图，记得发回给对方。';
+  } else {
+    title = name ? name + ' 已接受，你这边还差一步' : '对方已接受，你这边还差一步';
+    sub = '在陈仓里收下这张回执，你们就加好了。';
+    step = '最后一步';
+    done = '已复制。打开陈仓，点「粘贴」完成添加。';
+  }
+  document.title = title;
+  $('copied-text').textContent = done;
+
+  // ---- 复制（备用路径） ----
+  function legacyCopy() {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  function copy(show) {
+    var report = function (ok) {
+      if (!show) return;
+      $('copied').hidden = false;
+      if (!ok) { $('manual-text').value = text; $('manual').hidden = false; $('copied-text').hidden = true; }
+      $('copied').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { report(true); }, function () { report(legacyCopy()); });
+    } else {
+      report(legacyCopy());
+    }
+  }
+
+  if (inApp) {
+    $('g-step').textContent = step;
+    $('g-title').textContent = title;
+    $('g-sub').textContent = sub;
+    $('g-open').textContent = isAndroid ? '「在浏览器中打开」' : '「在 Safari 中打开」';
+    if (kind === 'response') $('g-then').textContent = '会回到陈仓，就加好了';
+    $('guide').hidden = false;
+    $('g-copy').addEventListener('click', function () { copy(true); });
+    return;
+  }
+
+  // ---- 系统浏览器 ----
+  $('step').textContent = step;
+  $('title').textContent = title;
+  $('sub').textContent = sub;
+  if (kind === 'response') {
+    $('install').hidden = true;
+    $('open-note').textContent = '点这里回到陈仓，完成添加。';
+  }
+  var others = HOSTS.filter(function (h) { return h !== location.host; });
+  var target = others[0] || HOSTS[0];
+  // ?from=open：跳过去后没被 App 接走，说明多半还没装，落地页据此提示先安装。
+  $('open').href = 'https://' + target + '/p/?from=open#' + frag;
+  if (/[?&]from=open\b/.test(location.search) && kind === 'invite') {
+    // 点了「打开陈仓」却落到这里：多半还没装。下载提到最前面当主按钮。
+    $('not-opened').hidden = false;
+    $('open-area').parentNode.insertBefore($('install'), $('open-area'));
+    $('apk').className = $('ios').className = 'btn primary';
+    $('open').className = 'btn secondary';
+    $('open-note').textContent = '装好后回到这一页，点这里进入添加。';
+  }
+  // 只给本机能装的那个下载按钮；电脑上两个都给。
+  if (isAndroid) $('ios').hidden = true;
+  else if (/iPhone|iPad|iPod/i.test(ua)) $('apk').hidden = true;
+  $('main').hidden = false;
+  $('copy').addEventListener('click', function () { copy(true); });
+  // 点下载时顺手复制：装好后直接打开陈仓，粘贴条会提示这条配对码。
+  $('apk').addEventListener('click', function () { copy(false); });
+  $('ios').addEventListener('click', function () { copy(false); });
+})();
+</script>
+</body>
+</html>

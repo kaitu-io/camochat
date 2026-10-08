@@ -1,0 +1,15 @@
+# gitleaks config: default rules plus an allowlist for known false positives.
+# Classic top-level [allowlist] syntax works in both gitleaks 8.21.x (CI) and 8.30.x.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Public test vectors and non-secret identifiers"
+paths = [
+  # RFC 8032 / KAT test vectors (published, non-secret keys)
+  '''core/kat-vectors/''',
+]
+regexes = [
+  # UserDefaults key name in PendingIntakeStore.swift, not a credential
+  '''cc\.pendingIntake\.v1''',
+]

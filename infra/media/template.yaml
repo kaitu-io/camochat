@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "chencang rich-media relay (bucket + upload signer). Source: see the source page served by the distributions (/source)"
+Parameters:
+  CodeBucket: { Type: String }
+  CodeKey: { Type: String }
+  SourceSha256: { Type: String }
+  DistributionArns: { Type: CommaDelimitedList }   # three CloudFront distributions (ARNs, comma separated)
+Resources:
+  MediaBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: chencang-media
+      PublicAccessBlockConfiguration: { BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true }
+      OwnershipControls: { Rules: [ { ObjectOwnership: BucketOwnerEnforced } ] }
+      BucketEncryption: { ServerSideEncryptionConfiguration: [ { ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 } } ] }
+      LifecycleConfiguration:
+        Rules:
+          - { Id: expire-1d, Status: Enabled, Prefix: b/, ExpirationInDays: 1, AbortIncompleteMultipartUpload: { DaysAfterInitiation: 1 } }
+  MediaBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MediaBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: { Service: cloudfront.amazonaws.com }
+            Action: s3:GetObject
+            Resource: !Sub '${MediaBucket.Arn}/b/*'
+            Condition: { StringEquals: { AWS:SourceArn: !Ref DistributionArns } }
+  SignerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement: [ { Effect: Allow, Principal: { Service: lambda.amazonaws.com }, Action: sts:AssumeRole } ]
+      Policies:
+        - PolicyName: put-media-only
+          PolicyDocument:
+            Statement: [ { Effect: Allow, Action: s3:PutObject, Resource: !Sub '${MediaBucket.Arn}/b/*' } ]
+  # 故意不挂 AWSLambdaBasicExecutionRole：函数没有写 CloudWatch 日志的权限，想记也记不了。
+  Signer:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: chencang-media-signer
+      Runtime: nodejs22.x
+      Handler: index.handler
+      Role: !GetAtt SignerRole.Arn
+      MemorySize: 256
+      Timeout: 5
+      Code: { S3Bucket: !Ref CodeBucket, S3Key: !Ref CodeKey }
+      Environment: { Variables: { BUCKET: !Ref MediaBucket, SOURCE_SHA256: !Ref SourceSha256 } }
+  SignerUrl:
+    Type: AWS::Lambda::Url
+    Properties: { TargetFunctionArn: !Ref Signer, AuthType: AWS_IAM }
+  SignerUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Signer
+      Action: lambda:InvokeFunctionUrl
+      Principal: cloudfront.amazonaws.com
+      # SourceAccount instead of SourceArn: admits any CloudFront distribution in this account
+      # (needed so all three mirror distributions can invoke the signer without per-ARN permissions).
+      SourceAccount: !Ref AWS::AccountId
+      FunctionUrlAuthType: AWS_IAM
+  SignerInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Signer
+      Action: lambda:InvokeFunction
+      Principal: cloudfront.amazonaws.com
+      # SourceAccount instead of SourceArn: admits any CloudFront distribution in this account
+      # (needed so all three mirror distributions can invoke the signer without per-ARN permissions).
+      SourceAccount: !Ref AWS::AccountId
+  MediaOac:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig: { Name: chencang-media-s3, OriginAccessControlOriginType: s3, SigningBehavior: always, SigningProtocol: sigv4 }
+  SignerOac:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig: { Name: chencang-media-signer, OriginAccessControlOriginType: lambda, SigningBehavior: always, SigningProtocol: sigv4 }
+  # /b/* response headers: force every downloaded blob to be treated as an
+  # opaque, non-executable download — no matter what Content-Type the
+  # uploader's client claimed when it PUT the object (see F1: sign.mjs pins
+  # Content-Type into the presigned request, this policy pins it again on
+  # the way out so a stale/pre-fix object can't serve as text/html either).
+  MediaResponseHeaders:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: chencang-media-blob
+        Comment: "/b/* only: opaque octet-stream download, never renderable as HTML/JS"
+        SecurityHeadersConfig:
+          ContentTypeOptions: { Override: true }
+          ContentSecurityPolicy:
+            ContentSecurityPolicy: "sandbox; default-src 'none'"
+            Override: true
+        CustomHeadersConfig:
+          Items:
+            - { Header: Content-Type, Value: application/octet-stream, Override: true }
+            - { Header: Content-Disposition, Value: attachment, Override: true }
+  # /b/* cache TTL: short and fixed (not CachingOptimized's viewer-driven
+  # long TTL) — blob objects are one-shot and expire out of S3 in ~1-2 days
+  # anyway (see F3), so there is no reason to cache them for the default
+  # policy's up-to-a-year ceiling.
+  MediaCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: chencang-media-blob-cache
+        Comment: "/b/* only: fixed 1h TTL, no cookies/headers/query in the cache key"
+        DefaultTTL: 3600
+        MaxTTL: 3600
+        MinTTL: 0
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig: { CookieBehavior: none }
+          HeadersConfig: { HeaderBehavior: none }
+          QueryStringsConfig: { QueryStringBehavior: none }
+          EnableAcceptEncodingGzip: false
+          EnableAcceptEncodingBrotli: false
+Outputs:
+  BucketRegionalDomain: { Value: !GetAtt MediaBucket.RegionalDomainName }
+  SignerUrlDomain: { Value: !Select [ 2, !Split [ '/', !GetAtt SignerUrl.FunctionUrl ] ] }
+  MediaOacId: { Value: !GetAtt MediaOac.Id }
+  SignerOacId: { Value: !GetAtt SignerOac.Id }
+  MediaResponseHeadersPolicyId: { Value: !GetAtt MediaResponseHeaders.Id }
+  MediaCachePolicyId: { Value: !GetAtt MediaCachePolicy.Id }

@@ -1,0 +1,5 @@
+# Stray compiled neural-codec model artifacts (no model ships in the app
+# anymore; ignored defensively in case a local build/spike emits one).
+*.mlmodelc
+build-uat/
+scripts/uat-devices.env
