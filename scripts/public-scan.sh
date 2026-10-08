@@ -26,7 +26,7 @@ done > "$LIST"
 hits=0
 while IFS= read -r pat; do
   [ -z "$pat" ] && continue
-  out=$(cd "$ROOT" && xargs -0 grep -HnIE -e "$pat" < "$LIST" 2>/dev/null | awk -F: -v p="$pat" '{print $1 ":" $2 ":" p}')
+  out=$(cd "$ROOT" && xargs -0 grep -HnIE -e "$pat" < "$LIST" 2>/dev/null | P="$pat" awk -F: '{print $1 ":" $2 ":" ENVIRON["P"]}')
   if [ -n "$out" ]; then echo "$out"; hits=1; fi
 done < "$DENY"
 exit $hits
