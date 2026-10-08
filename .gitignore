@@ -24,9 +24,6 @@ ios/**/xcuserdata/
 .env.local
 *.log
 
-# Claude Code agent runtime state
-.claude/
-
 # superpowers skill workspaces (ephemeral)
 .superpowers/
 

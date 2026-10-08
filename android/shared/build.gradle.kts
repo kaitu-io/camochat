@@ -64,7 +64,7 @@ android {
 // glue to look for `chencang_bindings` instead of `uniffi_chencang`.
 // The Cargo `target/` dir is at the monorepo root. When this build runs from
 // the main checkout it's two levels up (../../target/<...>); inside a git
-// worktree the chencang-android dir is at .claude/worktrees/<id>/chencang-android,
+// worktree the android dir is nested deeper inside the worktree,
 // so `../../target/...` would resolve into the worktree which doesn't have
 // a `target/`. We therefore walk up until we find a parent containing the
 // expected dylib.

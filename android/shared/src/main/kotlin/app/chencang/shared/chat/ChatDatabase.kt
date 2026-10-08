@@ -41,7 +41,7 @@ abstract class ChatDatabase : RoomDatabase() {
      * now-closed one. Matters for the account-wipe path: `wipeAll()` →
      * `CcServiceLocator.reset()` → `close()` → `from(context)` again, all in
      * the same process (this app has no App-Group-style process split — see
-     * CLAUDE.md) — without this, every chat operation after a wipe would
+     * README.md) — without this, every chat operation after a wipe would
      * throw "Cannot access database on a closed instance of RoomDatabase".
      */
     override fun close() {

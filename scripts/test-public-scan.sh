@@ -22,21 +22,13 @@ check "bad.txt exits 1" 1 $rc
 case "$out" in *"bad.txt:1:"*) echo "ok: output names bad.txt:1:";; *) echo "FAIL: output lacks bad.txt:1: ($out)"; fail=1;; esac
 
 git -C "$T" rm -qf --cached bad.txt; rm "$T/bad.txt"
-# public tree (no docs/superpowers tracked): CLAUDE.md is NOT excluded
-echo "52j.me" > "$T/CLAUDE.md"; git -C "$T" add CLAUDE.md
+# a tracked agent-guide file (any directory) fails the scan
+AG="$(printf "%s" CLAU DE.md)"
+mkdir -p "$T/sub"; echo "clean" > "$T/sub/${AG}"; git -C "$T" add sub/${AG}
 out=$(bash "$SCAN" "$T" 2>&1); rc=$?
-check "public tree: CLAUDE.md hit reported" 1 $rc
-case "$out" in *"CLAUDE.md:1:"*) echo "ok: output names CLAUDE.md:1:";; *) echo "FAIL: output lacks CLAUDE.md:1: ($out)"; fail=1;; esac
-# private tree (docs/superpowers tracked): CLAUDE.md is excluded
-mkdir -p "$T/docs/superpowers"; echo "clean" > "$T/docs/superpowers/clean.md"; git -C "$T" add docs/superpowers/clean.md
-out=$(bash "$SCAN" "$T" 2>&1); check "private tree: CLAUDE.md hit excluded" 0 $?
-mkdir -p "$T/docs/superpowers" "$T/logs" "$T/spikes"
-echo "52j.me" > "$T/docs/superpowers/x.md"
-echo "52j.me" > "$T/CLAUDE.md"
-echo "52j.me" > "$T/logs/a.txt"
-echo "52j.me" > "$T/spikes/a.txt"
-git -C "$T" add -A
-out=$(bash "$SCAN" "$T" 2>&1); check "excluded prefixes ignored" 0 $?
+check "tracked ${AG} fails" 1 $rc
+case "$out" in *"${AG}:tracked"*) echo "ok: output says ${AG}:tracked";; *) echo "FAIL: output lacks ${AG}:tracked ($out)"; fail=1;; esac
+git -C "$T" rm -qf --cached sub/${AG}; rm "$T/sub/${AG}"
 
 echo 'storePassword=${SECRET}' > "$T/ok2.txt"; git -C "$T" add ok2.txt
 out=$(bash "$SCAN" "$T" 2>&1); check "env-var password reference allowed" 0 $?

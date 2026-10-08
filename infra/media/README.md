@@ -2,7 +2,7 @@
 
 ## 这是什么
 
-语音 / 图片 /视频三种富媒体的对象存储中转。文字信道仍然零服务器、零网络（见根目录 `CLAUDE.md`）；只有这条富媒体腿会发出 HTTP 请求。
+语音 / 图片 /视频三种富媒体的对象存储中转。文字信道仍然零服务器、零网络（见根目录 `README.md`）；只有这条富媒体腿会发出 HTTP 请求。
 
 流程：客户端把媒体文件用 `blob_secret`（32 字节，只存在于 DR 加密的 `MEDIA_REF` 帧里、随会话密文走）本地加密成 `.cca` blob → 用 `blob_id = base64url(前 16 字节派生值)` 向 `GET /api/upload` 换一条 5 分钟的一次性 S3 直传许可 → `PUT` 到许可指向的 URL → 会话里贴一条 `MEDIA_REF` 引用（含 `blob_id` + `blob_secret` + `kind` + `dur_ms`）→ 对端解出引用后拉 `GET /b/<blob_id>`，本地用 `blob_secret` 解密。
 

@@ -7,6 +7,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Commit message hygiene
+        run: |
+          if git log --format=%B | grep -iqE 'co-authored-by: *clau[d]e|generated with \[clau[d]e'; then
+            echo "commit history contains forbidden attribution lines"; exit 1
+          fi
       - name: Internal-info deny scan
         run: bash scripts/test-public-scan.sh && bash scripts/public-scan.sh
       - name: Secret scan (gitleaks)
