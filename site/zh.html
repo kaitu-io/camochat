@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>陈仓 CamoChat — 穿过任何聊天软件、只有对方读得懂的加密消息</title>
+<meta name="description" content="陈仓（CamoChat）是开源的端到端加密对话 App，自己不建任何通信通道。你在陈仓里写下消息，把密文粘贴进微信、短信或任何聊天软件，只有配对过的那个人能还原。文字不经过任何服务器；不需要账号，不要手机号。">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#101214">
+<link rel="canonical" href="https://kaitu-io.github.io/camochat/zh.html">
+<link rel="alternate" hreflang="en" href="https://kaitu-io.github.io/camochat/">
+<link rel="alternate" hreflang="zh-Hans" href="https://kaitu-io.github.io/camochat/zh.html">
+<link rel="alternate" hreflang="x-default" href="https://kaitu-io.github.io/camochat/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="陈仓 CamoChat">
+<meta property="og:title" content="陈仓 — 穿过任何聊天软件、只有对方读得懂">
+<meta property="og:description" content="在陈仓里写，把密文贴进任何聊天软件，只有对方能还原。文字不经过任何服务器。源码公开。">
+<meta property="og:url" content="https://kaitu-io.github.io/camochat/zh.html">
+<meta property="og:image" content="https://kaitu-io.github.io/camochat/og.png">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:locale:alternate" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="陈仓 — 穿过任何聊天软件、只有对方读得懂">
+<meta name="twitter:description" content="在陈仓里写，把密文贴进任何聊天软件，只有对方能还原。文字不经过任何服务器。源码公开。">
+<meta name="twitter:image" content="https://kaitu-io.github.io/camochat/og.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "陈仓",
+  "alternateName": "CamoChat",
+  "applicationCategory": "CommunicationApplication",
+  "operatingSystem": "iOS, Android",
+  "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+  "codeRepository": "https://github.com/kaitu-io/camochat",
+  "url": "https://kaitu-io.github.io/camochat/zh.html",
+  "description": "开源的端到端加密对话 App，自己不建通信通道。消息在手机上加密成密文，由用户自己经任何已在用的聊天软件送达，只有配对过的对方能还原。文字不经过任何服务器；语音、图片、视频在手机上加密后以密文经源码公开的中转，约 1–2 天内自动删除。",
+  "featureList": [
+    "端到端加密，文字不经过任何服务器",
+    "密文能穿过微信、短信等聊天软件的复制粘贴",
+    "X25519 密钥协商，XChaCha20-Poly1305，每条消息一把新钥匙",
+    "8 个表情的指纹核对，防中间人",
+    "无账号、不要手机号、不上传通讯录",
+    "AGPL-3.0 开源"
+  ],
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "陈仓是什么？",
+      "acceptedAnswer": { "@type": "Answer", "text": "一款自己不建通信通道的端到端加密对话 App。你写下的话在手机上变成密文，由你经任何已在用的聊天软件送给对方，对方的陈仓把它还原。中间经手的人看到的都是乱码。" } },
+    { "@type": "Question", "name": "陈仓自己会传消息吗？",
+      "acceptedAnswer": { "@type": "Answer", "text": "文字不会。陈仓没有消息服务器，文字全程不联网，密文怎么送由你决定。语音、图片、视频例外：它们在手机上加密后以密文存到源码公开的中转，聊天里只发一条短链接；App 内 24 小时后显示已过期，中转约 1–2 天内自动删除。" } },
+    { "@type": "Question", "name": "你们能看到我的消息吗？",
+      "acceptedAnswer": { "@type": "Answer", "text": "不能。文字从不经过任何服务器，包括我们的。媒体到达中转时只是密文，钥匙只在你和对方的手机上。" } },
+    { "@type": "Question", "name": "陈仓用的是什么加密？",
+      "acceptedAnswer": { "@type": "Answer", "text": "配对用 X25519 密钥协商（X3DH 方式）并做密钥确认，双方用 8 个表情核对；消息用 XChaCha20-Poly1305 加密，钥匙沿单向链逐条派生，每条消息一把。后量子套件（ML-KEM-768 + ML-DSA-65）已经实现，尚未启用。" } }
+  ]
+}
+</script>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="/zh.html"><img src="/favicon.svg" alt="" width="32" height="32">陈仓</a>
+    <nav>
+      <a href="#how">怎么工作</a>
+      <a href="#pairing">配对</a>
+      <a href="#security">安全</a>
+      <a href="#open">开源</a>
+      <a href="#download">下载</a>
+      <a class="lang" href="/" data-lang="en" hreflang="en" lang="en">English</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- 主视觉 -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <img class="wordmark" src="/wordmark.svg" alt="camochat" width="300" height="56">
+        <h1>在任何聊天软件里说，<br><span class="hl">只有对方读得懂。</span></h1>
+        <p class="sub">陈仓在你的手机上把消息变成密文。把它贴进微信、短信或任何聊天软件，只有配对过的那个人能还原。文字不经过任何服务器，包括我们的。</p>
+        <div class="cta">
+          <a class="btn primary" href="#download">免费下载</a>
+          <a class="btn ghost" href="#how">看看怎么工作</a>
+        </div>
+        <ul class="badges">
+          <li>开源 · AGPL-3.0</li>
+          <li>文字不联网</li>
+          <li>无账号，不要手机号</li>
+        </ul>
+      </div>
+      <figure class="duo" style="margin:0">
+        <div class="phone">
+          <div class="bar"><span class="dot"></span>任何聊天软件</div>
+          <div class="bubble them cipher">🔒 㔲䴎㩛䂇㷨䍂㙶䬑㽘䁫㛓䎽</div>
+          <div class="bubble me cipher">🔒 䧹㢭䁸㮩䳲㞊㸖䠋</div>
+          <div class="bubble them cipher">🔒 㾅䃪㫨䕱㛬䰘㲴</div>
+        </div>
+        <div class="phone">
+          <div class="bar"><img src="/favicon.svg" alt="">陈仓</div>
+          <div class="bubble them">今晚七点还见吗？</div>
+          <div class="bubble me">见，老城门口。</div>
+          <div class="bubble them">好，不见不散 👍</div>
+        </div>
+        <figcaption>同样三条消息：左边是聊天软件看到的，右边是你们俩读到的。</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 怎么工作 -->
+  <section class="block" id="how">
+    <div class="wrap">
+      <span class="eyebrow">怎么工作</span>
+      <h2>聊天软件负责送，但它读不懂</h2>
+      <p class="lead">陈仓自己没有通信通道。它在你的手机上把消息锁好，把密文交给你；你用平时在用的任何软件把它发出去。</p>
+
+      <div class="flow" role="img" aria-label="你的手机加密消息，任何聊天软件传送密文，对方的手机解密。">
+        <div class="node hot">
+          <span class="tag">你的手机</span>
+          <svg class="ico" viewBox="0 0 48 48" fill="none" stroke="#3FAE8C" stroke-width="2.5" stroke-linejoin="round"><rect x="10" y="22" width="28" height="20" rx="4"/><path d="M16 22v-6a8 8 0 0 1 16 0v6"/><circle cx="24" cy="31" r="2.5" fill="#3FAE8C"/></svg>
+          <div class="bubble me">七点见</div>
+          <p>在这里加密。钥匙只在你和对方两台手机上。</p>
+        </div>
+        <div class="arrow"><svg viewBox="0 0 44 16"><path d="M2 8h36M32 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>分享或粘贴</span></div>
+        <div class="node cold">
+          <span class="tag">微信 · 短信 · 邮件 · …</span>
+          <svg class="ico" viewBox="0 0 48 48" fill="none" stroke="#A2A8AD" stroke-width="2.5" stroke-linejoin="round"><path d="M8 12h32v20H22l-8 7v-7H8z"/><path d="M15 20h18M15 25h11" stroke-linecap="round"/></svg>
+          <div class="bubble cipher">🔒 㔲䴎㩛䂇㷨䍂㙶</div>
+          <p>只看到一个 🔒 加一串乱码。没有内容可读，也没有内容可审。</p>
+        </div>
+        <div class="arrow"><svg viewBox="0 0 44 16"><path d="M2 8h36M32 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>交给陈仓打开</span></div>
+        <div class="node hot">
+          <span class="tag">对方的手机</span>
+          <svg class="ico" viewBox="0 0 48 48" fill="none" stroke="#3FAE8C" stroke-width="2.5" stroke-linejoin="round"><rect x="10" y="22" width="28" height="20" rx="4"/><path d="M16 22v-6a8 8 0 0 1 15.5-2.8"/><circle cx="24" cy="31" r="2.5" fill="#3FAE8C"/></svg>
+          <div class="bubble them">七点见</div>
+          <p>在这里还原。只有配对过的人能做到。</p>
+        </div>
+      </div>
+      <div class="no-server">
+        <svg viewBox="0 0 28 28" fill="none" stroke="#A2A8AD" stroke-width="2"><rect x="5" y="4" width="18" height="8" rx="2"/><rect x="5" y="16" width="18" height="8" rx="2"/><path d="M3 25L25 3" stroke="#E0605A" stroke-width="2.5" stroke-linecap="round"/></svg>
+        <span>整条路上没有任何陈仓服务器。文字全程不联网。</span>
+      </div>
+
+      <ol class="steps">
+        <li><h3>配对一次</h3><p>扫对方的二维码，或打开对方发来的邀请链接，然后核对两边屏幕上的 8 个表情是否一样。</p></li>
+        <li><h3>写下</h3><p>像平常一样在陈仓里聊。点发送，你拿到的是一段可以分享的密文，而不是一条被谁替你送出去的消息。</p></li>
+        <li><h3>转交</h3><p>把密文分享或粘贴进任何聊天软件。对方点一下交给陈仓，就看到原文。</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 配对 -->
+  <section class="block" id="pairing">
+    <div class="wrap">
+      <span class="eyebrow">配对</span>
+      <h2>8 个表情一样 = 中间没有第三者</h2>
+      <p class="lead">配对时公钥就装在二维码或链接里交换，不需要任何服务器牵线。两台手机随后算出同一个秘密，并把它显示成 8 个表情。</p>
+      <div class="pair">
+        <div class="phone">
+          <div class="who">你的屏幕</div>
+          <div class="emoji" aria-label="八个表情"><span>🦊</span><span>🍉</span><span>🚲</span><span>🌙</span><span>🎈</span><span>🐢</span><span>🔔</span><span>🌵</span></div>
+          <div class="ok">✓ 一致</div>
+        </div>
+        <div class="eq" aria-hidden="true">=</div>
+        <div class="phone">
+          <div class="who">对方的屏幕</div>
+          <div class="emoji" aria-label="八个表情"><span>🦊</span><span>🍉</span><span>🚲</span><span>🌙</span><span>🎈</span><span>🐢</span><span>🔔</span><span>🌵</span></div>
+          <div class="ok">✓ 一致</div>
+        </div>
+      </div>
+      <div class="pair-notes">
+        <div class="note"><strong>当面或打电话对一下</strong>表情直接由双方共有的秘密算出。一致，就说明你手里的钥匙和对方手里的是同一套。</div>
+        <div class="note warn"><strong>不一致就停下</strong>邀请可能在路上被人调包了。删掉这次配对，换一个你信得过的渠道重新配对。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 安全 -->
+  <section class="block" id="security">
+    <div class="wrap">
+      <span class="eyebrow">安全</span>
+      <h2>把信任交给数学，而不是承诺</h2>
+      <p class="lead">陈仓的隐私不靠「我们保证不看」。文字压根不经过我们，我们无处可看。</p>
+
+      <table class="who-table">
+        <thead><tr><th>谁</th><th>能读吗？</th><th>他拿到什么</th></tr></thead>
+        <tbody>
+          <tr><td>你和对方</td><td><span class="verdict yes">✓ 能</span></td><td>原文。钥匙只在你们两台手机上。</td></tr>
+          <tr><td>聊天软件（微信、短信…）</td><td><span class="verdict no">✕ 不能</span></td><td><span class="sees">🔒 㔲䴎㩛䂇…</span>，以及「你发了点什么」这件事。</td></tr>
+          <tr><td>陈仓团队</td><td><span class="verdict no">✕ 不能</span></td><td>文字：什么都拿不到，它根本不经过我们。媒体：一个打不开的加密文件。</td></tr>
+          <tr><td>我们的媒体中转</td><td><span class="verdict no">✕ 不能</span></td><td>加密的语音、图片、视频文件，约 1–2 天内删除。<a href="/source">源码公开。</a></td></tr>
+          <tr><td>和你同一网络的人</td><td><span class="verdict no">✕ 不能</span></td><td>和聊天软件看到的一样，一串乱码。</td></tr>
+        </tbody>
+      </table>
+
+      <div class="keys">
+        <div class="panel">
+          <h3>钥匙从不离开手机</h3>
+          <svg viewBox="0 0 460 170" role="img" aria-label="每台手机各自保管私钥，两者之间只传密文。">
+            <g font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif" font-size="14" fill="#A2A8AD">
+              <rect x="10" y="20" width="110" height="130" rx="18" fill="#101214" stroke="#26292C" stroke-width="2"/>
+              <rect x="340" y="20" width="110" height="130" rx="18" fill="#101214" stroke="#26292C" stroke-width="2"/>
+              <g fill="none" stroke="#3FAE8C" stroke-width="3" stroke-linecap="round"><circle cx="52" cy="72" r="13"/><path d="M65 72h28M83 72v10M91 72v7"/></g>
+              <g fill="none" stroke="#3FAE8C" stroke-width="3" stroke-linecap="round"><circle cx="382" cy="72" r="13"/><path d="M395 72h28M413 72v10M421 72v7"/></g>
+              <text x="65" y="118" text-anchor="middle" fill="#EDEFF1">你的钥匙</text>
+              <text x="395" y="118" text-anchor="middle" fill="#EDEFF1">对方的钥匙</text>
+              <path d="M130 85h200" stroke="#26292C" stroke-width="2" stroke-dasharray="5 6"/>
+              <rect x="170" y="66" width="120" height="38" rx="10" fill="#212528"/>
+              <text x="230" y="90" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" fill="#A2A8AD">🔒 㔲䴎㩛䂇</text>
+              <text x="230" y="132" text-anchor="middle">两边之间只有密文</text>
+            </g>
+          </svg>
+          <p>你的身份是在手机上生成的一对密钥，不绑手机号或邮箱，也从不上传。</p>
+        </div>
+        <div class="panel">
+          <h3>每条消息一把新钥匙</h3>
+          <svg viewBox="0 0 460 170" role="img" aria-label="单向的钥匙链：每走一步产生下一把链钥匙和一把消息钥匙；用过的消息钥匙被删掉。">
+            <g font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif" font-size="14">
+              <g fill="#212528" stroke="#3FAE8C" stroke-width="2"><rect x="10" y="20" width="70" height="36" rx="9"/><rect x="130" y="20" width="70" height="36" rx="9"/><rect x="250" y="20" width="70" height="36" rx="9"/><rect x="370" y="20" width="70" height="36" rx="9"/></g>
+              <g fill="#EDEFF1" text-anchor="middle"><text x="45" y="43">链 1</text><text x="165" y="43">链 2</text><text x="285" y="43">链 3</text><text x="405" y="43">链 4</text></g>
+              <g stroke="#3FAE8C" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M82 38h44M120 33l6 5-6 5M202 38h44M240 33l6 5-6 5M322 38h44M360 33l6 5-6 5"/><path d="M45 58v34M40 86l5 6 5-6M165 58v34M160 86l5 6 5-6M285 58v34M280 86l5 6 5-6"/></g>
+              <g text-anchor="middle" fill="#6C7378" font-size="11"><text x="104" y="12">单向</text><text x="224" y="12">单向</text><text x="344" y="12">单向</text></g>
+              <g fill="#101214" stroke="#26292C" stroke-width="2"><rect x="15" y="96" width="60" height="32" rx="8"/><rect x="135" y="96" width="60" height="32" rx="8"/><rect x="255" y="96" width="60" height="32" rx="8" stroke="#3FAE8C"/></g>
+              <g text-anchor="middle"><text x="45" y="117" fill="#6C7378">消息 1</text><text x="165" y="117" fill="#6C7378">消息 2</text><text x="285" y="117" fill="#EDEFF1">消息 3</text></g>
+              <g stroke="#E0605A" stroke-width="2.5" stroke-linecap="round"><path d="M20 124l50-24M140 124l50-24"/></g>
+              <text x="105" y="155" text-anchor="middle" fill="#A2A8AD">用过 → 删掉</text>
+              <text x="285" y="155" text-anchor="middle" fill="#A2A8AD">下一条消息</text>
+            </g>
+          </svg>
+          <p>每把消息钥匙都沿一条链单向派生，用完即弃：同一段密文只能打开一次，也无法倒推回更早的消息。</p>
+        </div>
+      </div>
+
+      <div class="spec">
+        <div><b>密钥协商</b><span>X25519（X3DH 方式）+ 密钥确认</span></div>
+        <div><b>消息加密</b><span>XChaCha20-Poly1305</span></div>
+        <div><b>密钥派生</b><span>基于 BLAKE2b 的 HKDF，对称棘轮</span></div>
+        <div><b>身份核对</b><span>8 个表情的指纹</span></div>
+        <div><b>后量子</b><span>ML-KEM-768 + ML-DSA-65 套件已实现，尚未启用</span></div>
+        <div><b>自己审</b><span><a href="https://github.com/kaitu-io/camochat/tree/main/docs/protocol">协议说明</a> · <a href="https://github.com/kaitu-io/camochat">源码</a></span></div>
+      </div>
+
+      <div class="limits note">
+        <strong>陈仓藏不住的东西</strong>
+        聊天软件仍然知道你在和谁、什么时候聊，被加密的只是内容。拿到你已解锁手机的人，能看到陈仓里的聊天记录。钥匙链只会往前走，但手机一旦被攻破，目前还不能自动恢复安全。
+      </div>
+    </div>
+  </section>
+
+  <!-- 媒体 -->
+  <section class="block" id="media">
+    <div class="wrap">
+      <span class="eyebrow">语音 · 图片 · 视频</span>
+      <h2>大文件绕一小段路，全程仍是密文</h2>
+      <p class="lead">媒体太大，没法粘贴。它在你手机上加密后，以密文暂存在我们的中转上；聊天里只发一条短链接，解开它的钥匙藏在你的加密消息里。</p>
+      <div class="flow" role="img" aria-label="媒体在手机上加密，以密文存到中转，对方取回后在自己手机上解密。">
+        <div class="node hot">
+          <span class="tag">你的手机</span>
+          <svg class="ico" viewBox="0 0 48 48" fill="none" stroke="#3FAE8C" stroke-width="2.5" stroke-linejoin="round"><rect x="8" y="12" width="32" height="24" rx="4"/><circle cx="18" cy="21" r="3"/><path d="M8 32l10-8 8 6 6-4 8 6"/></svg>
+          <p>用一把一次性钥匙加密照片。</p>
+        </div>
+        <div class="arrow"><svg viewBox="0 0 44 16"><path d="M2 8h36M32 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>上传密文</span></div>
+        <div class="node cold">
+          <span class="tag">陈仓中转</span>
+          <svg class="ico" viewBox="0 0 48 48" fill="none" stroke="#A2A8AD" stroke-width="2.5" stroke-linejoin="round"><rect x="10" y="20" width="28" height="20" rx="4"/><path d="M16 20v-5a8 8 0 0 1 16 0v5"/><circle cx="36" cy="12" r="7" stroke="#D89A4A"/><path d="M36 8v4l3 2" stroke="#D89A4A" stroke-linecap="round"/></svg>
+          <p>只保管一个它打不开的锁着的文件，约 1–2 天内删除。</p>
+        </div>
+        <div class="arrow"><svg viewBox="0 0 44 16"><path d="M2 8h36M32 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>聊天里一条短链接</span></div>
+        <div class="node hot">
+          <span class="tag">对方的手机</span>
+          <svg class="ico" viewBox="0 0 48 48" fill="none" stroke="#3FAE8C" stroke-width="2.5" stroke-linejoin="round"><rect x="8" y="12" width="32" height="24" rx="4"/><circle cx="18" cy="21" r="3"/><path d="M8 32l10-8 8 6 6-4 8 6"/></svg>
+          <p>取回后在本机解密。App 内 24 小时后显示已过期。</p>
+        </div>
+      </div>
+      <p class="under">中转服务的全部源码公开在 <a href="/source">/source</a>。文字从不走这条路。</p>
+    </div>
+  </section>
+
+  <!-- 开源 -->
+  <section class="block" id="open">
+    <div class="wrap">
+      <span class="eyebrow">开源</span>
+      <h2>每一行都能读，每个安装包都能验</h2>
+      <p class="lead">App、加密核心和中转服务全部以 AGPL-3.0 公开。安装包有正式签名，你可以自己核对。</p>
+      <div class="grid">
+        <div class="card">
+          <svg class="ico" viewBox="0 0 30 30" fill="none" stroke="#3FAE8C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9l-6 6 6 6M20 9l6 6-6 6M17 6l-4 18"/></svg>
+          <h3>全部源码</h3>
+          <p>Rust 加密核心、iOS 与 Android App、中转服务和本站：<a href="https://github.com/kaitu-io/camochat">github.com/kaitu-io/camochat</a>。</p>
+        </div>
+        <div class="card">
+          <svg class="ico" viewBox="0 0 30 30" fill="none" stroke="#3FAE8C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3l10 4v7c0 6-4 10-10 13C9 24 5 20 5 14V7z"/><path d="M10 15l4 4 6-7"/></svg>
+          <h3>验证你手里的版本</h3>
+          <p>每个 APK 都用同一张证书签名。装之前<a href="/verify-zh.html">核对一下指纹</a>。</p>
+        </div>
+        <div class="card">
+          <svg class="ico" viewBox="0 0 30 30" fill="none" stroke="#3FAE8C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5h13l5 5v15H6z"/><path d="M10 14h10M10 18h10M10 22h6"/></svg>
+          <h3>写明白的协议</h3>
+          <p>握手、棘轮、密文格式和表情指纹都写在 <a href="https://github.com/kaitu-io/camochat/tree/main/docs/protocol">docs/protocol</a> 里，附测试向量。</p>
+        </div>
+      </div>
+      <!-- pages:kaitu-about -->
+    </div>
+  </section>
+
+  <!-- 常见问题 -->
+  <section class="block" id="faq">
+    <div class="wrap" style="max-width:780px">
+      <span class="eyebrow">常见问题</span>
+      <h2>你可能想问</h2>
+      <p class="lead">大家最先问的几件事。</p>
+      <details open><summary>对方也要装陈仓吗？</summary><p>要。端到端加密的两头都得有能解密的程序。但你们都不用换掉平时用的聊天软件。</p></details>
+      <details><summary>陈仓自己会传消息吗？</summary><p>文字不会。陈仓没有消息服务器，文字全程不联网，密文怎么送由你决定。语音、图片、视频例外：它们在手机上加密后以密文存到我们的中转，聊天里只发一条短链接；App 内 24 小时后显示已过期，中转约 1–2 天内自动删除。</p></details>
+      <details><summary>你们能看到我的消息吗？</summary><p>不能，而且不是靠承诺。文字从不经过任何服务器，包括我们的。媒体到达中转时只是密文，钥匙只在你和对方的手机上。</p></details>
+      <details><summary>需要注册账号吗？</summary><p>不需要。你的身份是手机上的一对密钥，不要手机号、不要邮箱、不上传通讯录。联系人由你自己命名。</p></details>
+      <details><summary>密文为什么看起来像汉字？</summary><p>聊天软件会弄乱长串的随机字符、链接和生僻符号。陈仓把密文压成一串能安然穿过常见聊天软件复制粘贴的字符，前面加一个 🔒，方便你认出来。</p></details>
+      <details><summary>手机丢了怎么办？</summary><p>钥匙从不离开设备，所以没有云端备份可以恢复。提前在 App 里导出恢复短语，就能在新手机上恢复身份；否则需要和联系人重新配对。</p></details>
+    </div>
+  </section>
+
+  <!-- 下载 -->
+  <section class="block" id="download">
+    <div class="wrap">
+      <span class="eyebrow">下载</span>
+      <h2>开始使用陈仓</h2>
+      <p class="lead">免费，无需注册。Android 安装包现在就能下载；iOS 版正在 App Store 审核。</p>
+      <div class="dl-grid">
+        <div class="dl-card">
+          <h3>Android</h3>
+          <p>已用正式证书签名。支持 Android 10 及以上。</p>
+          <div class="row">
+            <a class="btn primary" href="/dl/chencang-latest.apk" download>下载 APK</a>
+            <a class="btn ghost" href="https://github.com/kaitu-io/camochat/releases">GitHub Releases</a>
+          </div>
+          <p class="dl-meta">始终是最新版 · <a href="/verify-zh.html">核对签名</a></p>
+        </div>
+        <div class="dl-card">
+          <h3>iOS</h3>
+          <p>正在 App Store 审核。上架后这里会直接链到 App Store。</p>
+          <div class="row"><a class="btn ghost" href="#" aria-disabled="true">App Store · 审核中</a></div>
+          <p class="dl-meta">需要 iOS 16 及以上 · 含「陈仓解密」动作扩展</p>
+        </div>
+      </div>
+      <div class="dl-note"><strong>关于直接安装 APK：</strong>Android 对所有非应用商店的安装包都会提示「未知来源」，这不代表安装包有问题。直装版有新版本时会在 App 内提示，你同意后才会下载。</div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footrow">
+      <div>© 2026 陈仓 CamoChat · AGPL-3.0 · 明修栈道，暗度陈仓</div>
+      <div class="links">
+        <a href="#how">怎么工作</a>
+        <a href="#security">安全</a>
+        <a href="https://github.com/kaitu-io/camochat">GitHub</a>
+        <a href="/verify-zh.html">验证正版</a>
+        <a href="/privacy.html">隐私政策</a>
+        <a href="/" data-lang="en" lang="en">English</a>
+      </div>
+    </div>
+    <!-- pages:kaitu-footer -->
+  </div>
+</footer>
+<script>
+  document.querySelectorAll('[data-lang]').forEach(function(a){a.addEventListener('click',function(){try{localStorage.setItem('cc-lang',a.getAttribute('data-lang'))}catch(e){}})});
+</script>
+</body>
+</html>

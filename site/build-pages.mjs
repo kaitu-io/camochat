@@ -2,12 +2,33 @@
 // Usage: node site/build-pages.mjs <outDir>
 // Root-absolute links (href="/X" / src="/X") are rewritten only in the output:
 // X exists in site/ -> relative path; otherwise -> CloudFront host H1.
+// `<!-- pages:NAME -->` markers become Pages-only snippets (links to kaitu.io). The
+// CloudFront copies are uploaded from site/ untouched, so they never carry them.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const H1 = 'https://d3nnqcgewrb4f0.cloudfront.net';
 const EXCLUDE = new Set(['build-pages.mjs', 'build-pages.test.mjs', 'README.md']);
+
+const PAGES_ONLY = {
+  'kaitu-about': {
+    en: '<p class="under">CamoChat is built and maintained by the team behind <a href="https://kaitu.io/">Kaitu</a>.</p>',
+    zh: '<p class="under">陈仓由 <a href="https://kaitu.io/">开途 Kaitu</a> 团队开发和维护。</p>',
+  },
+  'kaitu-footer': {
+    en: '<p class="made-by">An open-source project by <a href="https://kaitu.io/">Kaitu</a>.</p>',
+    zh: '<p class="made-by">由 <a href="https://kaitu.io/">开途 Kaitu</a> 出品的开源项目。</p>',
+  },
+};
+
+export function injectPagesOnly(html) {
+  const lang = /<html\b[^>]*\blang=["']zh/i.test(html) ? 'zh' : 'en';
+  return html.replace(/<!-- pages:([a-z-]+) -->/g, (_m, name) => {
+    if (!PAGES_ONLY[name]) throw new Error(`unknown pages marker: ${name}`);
+    return PAGES_ONLY[name][lang];
+  });
+}
 
 export function rewriteHtml(html, pageRelPath, exists) {
   const pageDir = path.posix.dirname(pageRelPath);
@@ -47,7 +68,7 @@ function main(outDir) {
   for (const f of files) {
     const dest = path.join(outDir, f);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
-    if (f.endsWith('.html')) fs.writeFileSync(dest, rewriteHtml(fs.readFileSync(path.join(here, f), 'utf8'), f, exists));
+    if (f.endsWith('.html')) fs.writeFileSync(dest, rewriteHtml(injectPagesOnly(fs.readFileSync(path.join(here, f), 'utf8')), f, exists));
     else fs.copyFileSync(path.join(here, f), dest);
   }
   const cfg = path.join(here, '..', 'release', 'config', 'chencang-config.json');

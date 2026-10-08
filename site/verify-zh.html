@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>验证正版 — 陈仓 CamoChat</title>
+<meta name="description" content="如何确认你装的陈仓是官方原版：核对安装包签名指纹，以及更新配置单的签名公钥。">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#101214">
+<link rel="canonical" href="https://kaitu-io.github.io/camochat/verify-zh.html">
+<link rel="alternate" hreflang="en" href="https://kaitu-io.github.io/camochat/verify.html">
+<link rel="alternate" hreflang="zh-Hans" href="https://kaitu-io.github.io/camochat/verify-zh.html">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="/zh.html"><img src="/favicon.svg" alt="" width="32" height="32">陈仓</a>
+    <nav><a class="lang" href="/verify.html" data-lang="en" lang="en">English</a></nav>
+  </div>
+</header>
+
+<main class="wrap article">
+  <h1>验证正版</h1>
+  <p class="updated">适用于 Android 1.0.0 及之后的版本</p>
+  <p>签名指纹，就是安装包上一枚只有我们能盖的「电子印章」的编号。你手里的安装包盖的印章和下面一致，就说明它出自我们之手、没被人改过。镜像只是副本，认签名不认网址。</p>
+
+  <h2>官方指纹</h2>
+  <div class="fp"><b>Android 安装包签名证书（SHA-256）</b><code>02:AE:DC:63:FB:B7:79:3C:BA:5A:31:36:23:54:87:10:AA:E9:4A:C6:E7:8C:D3:AF:CA:D3:9B:16:6F:A5:70:06</code></div>
+  <div class="fp"><b>同一指纹（不带冒号，小写）</b><code>02aedc63fbb7793cba5a313623548710aae94ac6e78cd3afcad39b166fa57006</code></div>
+  <div class="fp"><b>更新配置单签名公钥（Ed25519，32 字节）</b><code>8c071da92b2b8fb9f4c373384a5cc4be531035ea20df3a64ce7a08a9c0ae1cec</code></div>
+
+  <h2>怎么核对安装包</h2>
+  <p>普通用户：只从下面的入口下载，不要用别人转来的来路不明的链接。</p>
+  <p>懂技术的用户：用 Android SDK 自带的 <code>apksigner</code> 查看签名，输出里的 <code>SHA-256 digest</code> 应与上面的指纹一致：</p>
+  <pre><code>apksigner verify --print-certs chencang-1.0.0.apk</code></pre>
+  <p>每个 GitHub Release 也列出了安装包的 SHA-256，可以逐字节核对镜像下载的文件。</p>
+
+  <h2>更新配置单</h2>
+  <p>App 会读取一份公开的配置单（里面没有任何个人或设备信息），列出下载镜像和最新版本。配置单带有我们的签名，App 内置了上面那把公钥，每次都会自动验签；验不过的配置单直接丢弃，你不需要做任何操作。</p>
+
+  <h2>官方下载入口</h2>
+  <ul>
+    <li><a href="https://github.com/kaitu-io/camochat/releases">GitHub Releases</a>（官方发布源）</li>
+    <li><a href="/dl/chencang-latest.apk">直接下载最新版 APK</a></li>
+  </ul>
+  <p><a href="/zh.html">← 返回首页</a></p>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footrow"><div>© 2026 陈仓 CamoChat · AGPL-3.0</div><div class="links"><a href="https://github.com/kaitu-io/camochat">GitHub</a><a href="/privacy.html">隐私政策</a></div></div>
+    <!-- pages:kaitu-footer -->
+  </div>
+</footer>
+<script>
+  document.querySelectorAll('[data-lang]').forEach(function(a){a.addEventListener('click',function(){try{localStorage.setItem('cc-lang',a.getAttribute('data-lang'))}catch(e){}})});
+</script>
+</body>
+</html>

@@ -1,5 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect width="64" height="64" rx="14" fill="#0c1a14"/>
-  <rect x="3" y="3" width="58" height="58" rx="12" fill="none" stroke="#2fbf8f" stroke-width="2"/>
-  <text x="32" y="44" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="38" font-weight="700" fill="#2fbf8f" text-anchor="middle">陈</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="CamoChat"><title>CamoChat</title><rect width="64" height="64" rx="14" fill="#101214"/><g transform="translate(7.04 7.04) scale(0.49920000000000003)"><g fill="#3FAE8C" stroke="#3FAE8C" stroke-linejoin="round"><path d="M19 48 L23 13 L47 31 Z" stroke-width="7"/><path d="M81 48 L77 13 L53 31 Z" stroke-width="7"/><path d="M24 76 C22 88 16 93 7 95 C22 97 34 92 42 82 Z" stroke-width="2"/><path d="M36 28 H64 A24 24 0 0 1 88 52 V60 A24 24 0 0 1 64 84 H36 A24 24 0 0 1 12 60 V52 A24 24 0 0 1 36 28 Z M25 52 Q37 41 47 55 Q35 68 25 52 Z M75 52 Q63 41 53 55 Q65 68 75 52 Z" fill-rule="evenodd" stroke="none"/><path d="M36.5 46 Q39 54.5 36.5 63 Q34 54.5 36.5 46 Z M63.5 46 Q66 54.5 63.5 63 Q61 54.5 63.5 46 Z" stroke="none"/></g></g></svg>
