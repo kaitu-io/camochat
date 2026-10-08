@@ -42,9 +42,9 @@ targets:
       properties:
         CFBundleDisplayName: CamoChat
         CFBundleShortVersionString: "1.0.0"
-        CFBundleVersion: "5"
+        CFBundleVersion: "6"
         CFBundleIconName: AppIcon
-        ITSAppUsesNonExemptEncryption: false
+        ITSAppUsesNonExemptEncryption: true
         LSRequiresIPhoneOS: true
         # 系统启动页 = 开屏动画首帧：底色与猫都和 App 内动画(SplashOverlay)同色、同大小、同位置。
         UILaunchScreen:
@@ -115,7 +115,7 @@ targets:
       properties:
         CFBundleDisplayName: Decrypt with CamoChat
         CFBundleShortVersionString: "1.0.0"
-        CFBundleVersion: "5"
+        CFBundleVersion: "6"
         NSExtension:
           NSExtensionAttributes:
             NSExtensionActivationRule:
