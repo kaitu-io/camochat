@@ -11,4 +11,8 @@ final class AppInfoTests: XCTestCase {
     func testSourceURLIsThePublicSourcePage() {
         XCTAssertEqual(AppInfo.sourceURL(site: "https://site.test/").absoluteString, "https://site.test/source")
     }
+
+    func testPrivacyURLIsTheSitePrivacyPage() {
+        XCTAssertEqual(AppInfo.privacyURL(site: "https://site.test/").absoluteString, "https://site.test/privacy.html")
+    }
 }

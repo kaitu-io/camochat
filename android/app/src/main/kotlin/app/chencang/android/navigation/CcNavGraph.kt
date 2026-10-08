@@ -384,6 +384,7 @@ fun CcNavGraph(
                 onShareApp = { shareDialog = true },
                 onOpenSource = { AboutLinks.openSource(context, site) },
                 onOpenSite = { AboutLinks.openSite(context, site) },
+                onOpenPrivacy = { AboutLinks.openPrivacy(context, site) },
                 onBack = { nav.popBackStack() },
             )
             if (shareDialog) {
@@ -455,6 +456,7 @@ private fun MeSettings(
             }
         }) else null,
         onOpenSource = { AboutLinks.openSource(context, locator.configRepository.config.value.shareSite) },
+        onOpenPrivacy = { AboutLinks.openPrivacy(context, locator.configRepository.config.value.shareSite) },
         onOpenAbout = onOpenAbout,
         onShareApp = { asZip -> scope.launch { ApkShare.share(context, asZip) } },
         onRunUatLoopback = if (BuildConfig.DEBUG) ({ UatLoopback.runE2E() }) else null,

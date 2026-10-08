@@ -1082,6 +1082,10 @@ public enum L10n {
         NSLocalizedString("settings_privacy", bundle: .module, comment: "")
     }
 
+    public static var settingsPrivacyPolicy: String {
+        NSLocalizedString("settings_privacy_policy", bundle: .module, comment: "")
+    }
+
     public static var settingsVersion: String {
         NSLocalizedString("settings_version", bundle: .module, comment: "")
     }

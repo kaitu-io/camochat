@@ -263,6 +263,7 @@
 "settings_media_relay_hint" = "Encrypted, then relayed. All the code is public.";
 "settings_no_browser" = "No browser available";
 "settings_privacy" = "Privacy";
+"settings_privacy_policy" = "Privacy policy";
 "settings_version" = "Version";
 "share_app_hint" = "Your friend opens the file to install. If it arrives as .apk.1 in a chat app, rename it or send the zip.";
 "share_app_preparing" = "Preparing the file…";

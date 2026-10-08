@@ -28,6 +28,7 @@ struct MeView: View {
     /// 让用户能重试——身份若已被删掉而其它状态仍残留,重试路径依然可走。
     @State private var showWipeFailedAlert = false
     @State private var showSource = false
+    @State private var showPrivacy = false
 
     #if DEBUG
     @State private var uatStatus: String = ""
@@ -74,6 +75,9 @@ struct MeView: View {
         }
         .sheet(isPresented: $showSource) {
             SafariView(url: AppInfo.sourceURL(site: ConfigRepository.shared.current().shareSite)).ignoresSafeArea()
+        }
+        .sheet(isPresented: $showPrivacy) {
+            SafariView(url: AppInfo.privacyURL(site: ConfigRepository.shared.current().shareSite)).ignoresSafeArea()
         }
         .sheet(isPresented: $showAvatarEditor) {
             AvatarEditorSheet(glyph: $avatarGlyph, color: $avatarColor, myName: myName, fingerprintHex: fingerprintHex)
@@ -139,6 +143,11 @@ struct MeView: View {
                 showSource = true
             } label: {
                 settingsRow(title: L10n.settingsMediaRelay, subtitle: L10n.settingsMediaRelayHint)
+            }
+            Button {
+                showPrivacy = true
+            } label: {
+                settingsRow(title: L10n.settingsPrivacyPolicy)
             }
         } header: {
             sectionHeader(L10n.settingsAbout)
