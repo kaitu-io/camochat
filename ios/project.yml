@@ -44,7 +44,7 @@ targets:
         CFBundleShortVersionString: "1.0.0"
         CFBundleVersion: "6"
         CFBundleIconName: AppIcon
-        ITSAppUsesNonExemptEncryption: true
+        ITSAppUsesNonExemptEncryption: false
         LSRequiresIPhoneOS: true
         # 系统启动页 = 开屏动画首帧：底色与猫都和 App 内动画(SplashOverlay)同色、同大小、同位置。
         UILaunchScreen:
