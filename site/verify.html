@@ -1,92 +1,61 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>验证正版 — 陈仓 Chencang</title>
-<meta name="description" content="如何确认你装的陈仓是官方原版：核对安装包签名指纹，以及更新配置单的公钥。">
+<title>Verify your copy — CamoChat</title>
+<meta name="description" content="How to check that the CamoChat you installed is the official build: the APK signing-certificate fingerprint and the config signing key.">
 <meta name="robots" content="index, follow">
-<meta name="theme-color" content="#0c1a14">
+<meta name="theme-color" content="#101214">
+<link rel="canonical" href="https://kaitu-io.github.io/camochat/verify.html">
+<link rel="alternate" hreflang="en" href="https://kaitu-io.github.io/camochat/verify.html">
+<link rel="alternate" hreflang="zh-Hans" href="https://kaitu-io.github.io/camochat/verify-zh.html">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<style>
-  :root{
-    --bg:#0c1a14; --surface:#112a20; --line:#1f4334;
-    --text:#e8f0eb; --muted:#9fb4a8; --jade:#2fbf8f; --gold:#d8b65a;
-    --maxw:760px;
-  }
-  *{box-sizing:border-box}
-  body{margin:0; background:var(--bg); color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    line-height:1.8; -webkit-font-smoothing:antialiased;}
-  a{color:var(--jade); text-decoration:none}
-  a:hover{text-decoration:underline}
-  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 24px}
-  header{position:sticky; top:0; z-index:10; backdrop-filter:blur(10px);
-    background:rgba(12,26,20,.78); border-bottom:1px solid var(--line)}
-  .nav{display:flex; align-items:center; height:64px}
-  .brand{display:flex; align-items:center; gap:10px; font-weight:700; font-size:20px; color:var(--text)}
-  .brand .mark{width:30px; height:30px}
-  main{padding:56px 0 80px}
-  h1{font-size:clamp(28px,5vw,40px); font-weight:800; margin:0 0 6px}
-  .updated{color:var(--muted); font-size:14px; margin-bottom:40px}
-  h2{font-size:22px; font-weight:700; margin:40px 0 12px; color:var(--text)}
-  p,li{color:#d3e0d8; font-size:16px}
-  .muted{color:var(--muted)}
-  ul{padding-left:22px}
-  li{margin:6px 0}
-  .tldr{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:24px 26px; margin:8px 0 8px}
-  .tldr strong{color:var(--jade)}
-  .tldr ul{margin:10px 0 0; list-style:none; padding:0}
-  .tldr li{padding-left:28px; position:relative}
-  .tldr li::before{content:"✓"; position:absolute; left:0; color:var(--jade); font-weight:800}
-  footer{border-top:1px solid var(--line); padding:28px 0; color:var(--muted); font-size:14px; text-align:center}
-  .back{display:inline-block; margin-top:8px}
-  .fp{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin:10px 0}
-  .fp b{display:block; color:var(--muted); font-size:14px; font-weight:600; margin-bottom:4px}
-  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:14px; color:var(--gold); word-break:break-all}
-  pre{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; overflow-x:auto; font-size:14px}
-  pre code{color:var(--text); word-break:normal}
-</style>
+<link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <header>
   <div class="wrap nav">
-    <a class="brand" href="/">
-      <img class="mark" src="/favicon.svg" alt="" width="30" height="30">
-      陈仓 Chencang
-    </a>
+    <a class="brand" href="/"><img src="/favicon.svg" alt="" width="32" height="32">CamoChat</a>
+    <nav><a class="lang" href="/verify-zh.html" data-lang="zh" lang="zh">中文</a></nav>
   </div>
 </header>
 
-<main class="wrap">
-  <h1>验证正版</h1>
-  <p class="updated">适用于 Android 1.0.0 及之后的版本</p>
+<main class="wrap article">
+  <h1>Verify your copy</h1>
+  <p class="updated">Applies to Android 1.0.0 and later</p>
+  <p>A signing fingerprint is the serial number of a digital seal only we can apply. If the APK you have carries the seal below, it came from us and hasn't been altered. Any mirror is just a copy — the signature is what makes it genuine.</p>
 
-  <p>签名指纹，就是安装包上一枚只有我们能盖的“电子印章”的编号。你装的包盖的印章编号和下面一致，就说明它出自我们之手、没有被人改过。</p>
+  <h2>Official fingerprints</h2>
+  <div class="fp"><b>Android APK signing certificate (SHA-256)</b><code>02:AE:DC:63:FB:B7:79:3C:BA:5A:31:36:23:54:87:10:AA:E9:4A:C6:E7:8C:D3:AF:CA:D3:9B:16:6F:A5:70:06</code></div>
+  <div class="fp"><b>Same fingerprint, lowercase without colons</b><code>02aedc63fbb7793cba5a313623548710aae94ac6e78cd3afcad39b166fa57006</code></div>
+  <div class="fp"><b>Config signing public key (Ed25519, 32 bytes)</b><code>8c071da92b2b8fb9f4c373384a5cc4be531035ea20df3a64ce7a08a9c0ae1cec</code></div>
 
-  <h2>官方指纹</h2>
-  <div class="fp"><b>Android 安装包签名证书（SHA-256）</b><code>02:AE:DC:63:FB:B7:79:3C:BA:5A:31:36:23:54:87:10:AA:E9:4A:C6:E7:8C:D3:AF:CA:D3:9B:16:6F:A5:70:06</code></div>
-  <div class="fp"><b>同一指纹（不带冒号，小写）</b><code>02aedc63fbb7793cba5a313623548710aae94ac6e78cd3afcad39b166fa57006</code></div>
-  <div class="fp"><b>更新配置单签名公钥（Ed25519，32 字节）</b><code>8c071da92b2b8fb9f4c373384a5cc4be531035ea20df3a64ce7a08a9c0ae1cec</code></div>
-
-  <h2>怎么核对安装包</h2>
-  <p>普通用户：只从下面两个入口下载，不要用来路不明的链接。</p>
-  <p>懂技术的用户：用 Android SDK 自带的 <code>apksigner</code> 查看签名，输出里的 <code>SHA-256 digest</code> 应与上面的指纹一致：</p>
+  <h2>Check an APK</h2>
+  <p>Most people: download only from the links below, not from a link someone forwarded you.</p>
+  <p>Technical users: print the certificate with <code>apksigner</code> from the Android SDK. The <code>SHA-256 digest</code> must match the fingerprint above.</p>
   <pre><code>apksigner verify --print-certs chencang-1.0.0.apk</code></pre>
+  <p>Each GitHub Release also lists the file's SHA-256, so you can compare a mirror's download byte for byte.</p>
 
-  <h2>更新配置单</h2>
-  <p>App 会读取一份公开的配置单（里面没有任何个人或设备信息）。配置单带有我们的签名，App 内置了上面那把公钥，每次都会自动验签；验不过的配置单会被直接丢弃，你不需要做任何操作。</p>
+  <h2>The update config</h2>
+  <p>The app reads a public config file (it contains no personal or device information) that lists download mirrors and the latest version. It is signed with the key above, which is built into the app. The app checks the signature every time and discards anything that doesn't verify — you don't need to do anything.</p>
 
-  <h2>下载入口</h2>
+  <h2>Official downloads</h2>
   <ul>
-    <li><a href="https://github.com/kaitu-io/camochat/releases">GitHub Releases</a>（官方发布源）</li>
-    <li><a href="/dl/chencang-latest.apk">直接下载最新版 APK</a></li>
+    <li><a href="https://github.com/kaitu-io/camochat/releases">GitHub Releases</a> (the release source)</li>
+    <li><a href="/dl/chencang-latest.apk">Latest APK, direct download</a></li>
   </ul>
-  <a class="back" href="/">← 返回首页</a>
+  <p><a href="/">← Back to home</a></p>
 </main>
 
 <footer>
-  <div class="wrap">© 2026 陈仓 Chencang</div>
+  <div class="wrap">
+    <div class="footrow"><div>© 2026 CamoChat (陈仓) · AGPL-3.0</div><div class="links"><a href="https://github.com/kaitu-io/camochat">GitHub</a><a href="/privacy.html">Privacy</a></div></div>
+    <!-- pages:kaitu-footer -->
+  </div>
 </footer>
+<script>
+  document.querySelectorAll('[data-lang]').forEach(function(a){a.addEventListener('click',function(){try{localStorage.setItem('cc-lang',a.getAttribute('data-lang'))}catch(e){}})});
+</script>
 </body>
 </html>

@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rewriteHtml } from './build-pages.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { rewriteHtml, injectPagesOnly } from './build-pages.mjs';
 
 const H1 = 'https://d3nnqcgewrb4f0.cloudfront.net';
 
@@ -38,4 +41,23 @@ test('meta content root-absolute -> absolute H1 even if file exists', () => {
 });
 test('canonical link -> absolute H1', () => {
   assert.equal(rewriteHtml('<link rel="canonical" href="/">', 'index.html', () => true), `<link rel="canonical" href="${H1}/">`);
+});
+
+test('pages-only markers: English and Chinese snippets', () => {
+  const en = injectPagesOnly('<html lang="en"><!-- pages:kaitu-footer --></html>');
+  assert.match(en, /href="https:\/\/kaitu\.io\/">Kaitu</);
+  const zh = injectPagesOnly('<html lang="zh-Hans"><!-- pages:kaitu-about --></html>');
+  assert.match(zh, /开途 Kaitu/);
+  assert.equal(injectPagesOnly('<p>no marker</p>'), '<p>no marker</p>');
+});
+test('unknown pages marker fails the build', () => {
+  assert.throws(() => injectPagesOnly('<!-- pages:nope -->'), /unknown pages marker/);
+});
+test('site/ sources never contain kaitu.io (CloudFront copies are uploaded as-is)', () => {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
+  for (const f of walk(here)) {
+    if (/build-pages(\.test)?\.mjs$/.test(f) || !/\.(html|txt|xml|css|svg)$/.test(f)) continue;
+    assert.ok(!fs.readFileSync(f, 'utf8').includes('kaitu.io'), `${path.relative(here, f)} mentions kaitu.io`);
+  }
 });

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://kaitu-io.github.io/camochat/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kaitu-io.github.io/camochat/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://kaitu-io.github.io/camochat/zh.html"/>
+  </url>
+  <url>
+    <loc>https://kaitu-io.github.io/camochat/zh.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kaitu-io.github.io/camochat/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://kaitu-io.github.io/camochat/zh.html"/>
+  </url>
+  <url>
+    <loc>https://kaitu-io.github.io/camochat/verify.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kaitu-io.github.io/camochat/verify.html"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://kaitu-io.github.io/camochat/verify-zh.html"/>
+  </url>
+  <url>
+    <loc>https://kaitu-io.github.io/camochat/verify-zh.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kaitu-io.github.io/camochat/verify.html"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://kaitu-io.github.io/camochat/verify-zh.html"/>
+  </url>
+  <url><loc>https://kaitu-io.github.io/camochat/privacy.html</loc></url>
+</urlset>

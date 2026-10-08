@@ -1,2 +1,3 @@
 User-agent: *
 Allow: /
+Sitemap: https://kaitu-io.github.io/camochat/sitemap.xml

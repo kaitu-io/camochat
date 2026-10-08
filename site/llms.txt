@@ -1,4 +1,17 @@
-# 陈仓 Chencang
+# CamoChat (陈仓)
+
+> CamoChat is an open-source (AGPL-3.0) end-to-end encrypted messenger for iOS and Android with no channel of its own. Messages are encrypted on the phone into a short ciphertext that the user carries through any chat app they already use (WeChat, SMS, email); only the paired contact can decrypt it in CamoChat. Text never touches a server. Voice, photos and video are encrypted on the phone and pass through an open-source relay as ciphertext, deleted within about 1–2 days. Official site: https://kaitu-io.github.io/camochat/ · Source: https://github.com/kaitu-io/camochat
+
+## Key facts
+
+- Pairing: X25519 key agreement (X3DH-style) with key confirmation, exchanged in-band through a QR code or link; both sides compare an 8-emoji fingerprint.
+- Messages: XChaCha20-Poly1305; every message key is derived one way from a chain (HKDF over BLAKE2b) and deleted after use.
+- Post-quantum suite (ML-KEM-768 + ML-DSA-65) is implemented but not yet enabled.
+- No account, no phone number or email, no contact upload. Identity is a key pair on the device.
+- Limits: the chat app still sees who talks to whom and when; anyone holding the unlocked phone can read the history.
+- Authentic Android builds are identified by the signing-certificate fingerprint published at https://kaitu-io.github.io/camochat/verify.html
+
+# 陈仓（中文）
 
 > 陈仓是一款端到端加密的私密对话工具。用户在陈仓里写下的消息会被加密成一段密文，由用户自己经系统分享或复制粘贴，送进微信、短信等任何惯用的聊天软件；唯有完成配对的对方能在陈仓中还原。产品名取自成语「明修栈道，暗度陈仓」——明面走普通聊天工具，暗里完成端到端加密。
 
