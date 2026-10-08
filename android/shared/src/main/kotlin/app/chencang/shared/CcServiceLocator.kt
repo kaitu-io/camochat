@@ -111,21 +111,6 @@ class CcServiceLocator private constructor(
         scope.cancel()
     }
 
-    /**
-     * Boot path: ensure a local identity and SPK exist. Safe to call multiple
-     * times — subsequent calls are idempotent (load existing, skip generation).
-     */
-    suspend fun ensureIdentity() {
-        val identity = if (identityStore.hasIdentity()) {
-            identityStore.load()
-        } else {
-            identityStore.generateAndSave()
-        }
-        identity.use { id ->
-            prekeyProvisioner.provisionLocallyIfNeeded(id)
-        }
-    }
-
     /** 本机指纹的小写十六进制串（头像「自动」底色的种子）；无身份或读取失败返回 null。 */
     suspend fun myFingerprintHex(): String? = withContext(Dispatchers.IO) {
         try {
@@ -326,10 +311,9 @@ class CcServiceLocator private constructor(
                 )
                 // 昵称与头像的初值在后台读出后再发布，不在主线程构造时同步读（spec three-tab-shell §7.3）。
                 locator.scope.launch(Dispatchers.IO) { appPrefs.loadProfile() }
-                locator.scope.launch {
-                    // Best-effort identity bootstrap on Application init.
-                    runCatching { locator.ensureIdentity() }
-                }
+                // No identity bootstrap here: whether an identity exists is what tells a new user
+                // (onboarding creates it) from a returning one, so assembling the locator must
+                // never mint one. The SPK is provisioned lazily when the first invite is built.
                 return locator.also { instance = it }
             }
         }
