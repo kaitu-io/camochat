@@ -32,12 +32,14 @@ class LaunchRequestTest {
         assertThat(launchRequestFrom(Intent())).isEqualTo(LaunchRequest.None)
     }
 
-    @Test fun `start destination follows identity`() {
-        assertThat(startDestination(hasIdentity = true)).isEqualTo(Routes.MAIN)
+    @Test fun `start destination follows identity and terms acceptance`() {
+        assertThat(startDestination(hasIdentity = true, termsAccepted = true)).isEqualTo(Routes.MAIN)
+        assertThat(startDestination(hasIdentity = true, termsAccepted = false)).isEqualTo(Routes.TERMS)
+        assertThat(startDestination(hasIdentity = false, termsAccepted = false)).isEqualTo(Routes.ONBOARDING)
     }
 
     @Test fun `launch without identity runs onboarding then opens the wizard with the wire`() {
-        assertThat(startDestination(hasIdentity = false)).isEqualTo(Routes.ONBOARDING)
+        assertThat(startDestination(hasIdentity = false, termsAccepted = false)).isEqualTo(Routes.ONBOARDING)
         assertThat(afterOnboarding(LaunchRequest.OpenWizard("🔒w")))
             .containsExactly(NavStep.ToMain, NavStep.ToWizard("redeemer", "🔒w"))
             .inOrder()

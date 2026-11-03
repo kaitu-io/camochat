@@ -232,6 +232,7 @@
     <string name="onboarding_step_encrypt">发消息 — 在陈仓里写好，加密后粘进聊天软件发出去</string>
     <string name="onboarding_step_send">收消息、收邀请 — 在聊天软件里长按复制整条消息</string>
     <string name="onboarding_tagline">只有对方读得懂的加密对话</string>
+    <string name="onboarding_terms_agree">我已阅读并同意《使用条款》</string>
     <string name="pairing_add_contact">添加联系人</string>
     <string name="pairing_delete_body">对方手里的配对码不会消失，但对方再发回配对码时你将无法完成添加，需要重新开始。</string>
     <string name="pairing_delete_title">删除这份配对码？</string>
@@ -291,6 +292,7 @@
     <string name="settings_no_browser">没有可用的浏览器</string>
     <string name="settings_privacy">隐私</string>
     <string name="settings_privacy_policy">隐私政策</string>
+    <string name="settings_terms">使用条款</string>
     <string name="settings_version">版本</string>
     <string name="share_app_hint">对方收到后点开安装；聊天软件里收到的若是 .apk.1，请改名或用压缩包发送</string>
     <string name="share_app_preparing">正在准备文件…</string>
@@ -314,6 +316,10 @@
     <string name="status_not_sent_tap_again">还没发 · 点这里再发</string>
     <string name="status_shared">已分享</string>
     <string name="status_shared_toast">已分享</string>
+    <string name="terms_gate_accept">同意并继续</string>
+    <string name="terms_gate_body">继续使用前，请阅读并同意《使用条款》。我们对不良内容和骚扰零容忍。</string>
+    <string name="terms_gate_title">使用条款已更新</string>
+    <string name="terms_view">查看使用条款</string>
     <string name="thread_banner_say_hi">发一句话给对方，对方能解开就说明加好了</string>
     <string name="thread_banner_waiting_peer">等对方完成添加。对方发来第一条消息就说明加好了</string>
     <string name="thread_copy_encrypted">复制加密消息</string>

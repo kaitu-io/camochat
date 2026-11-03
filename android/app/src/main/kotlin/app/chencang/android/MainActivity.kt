@@ -19,6 +19,7 @@ import app.chencang.android.navigation.CcNavGraph
 import app.chencang.android.navigation.LaunchRequest
 import app.chencang.android.navigation.launchRequestFrom
 import app.chencang.android.navigation.startDestination
+import app.chencang.shared.moderation.CURRENT_TERMS_VERSION
 import app.chencang.design.MoyuTheme
 import app.chencang.design.moyuColors
 import app.chencang.android.update.UpdateController
@@ -48,7 +49,10 @@ class MainActivity : ComponentActivity() {
         // Intake entries hand a request over in extras (consumed on read).
         // Without an identity the app runs onboarding first, then the request.
         val launch = launchRequestFrom(intent)
-        val start = startDestination(locator.identityStore.hasIdentity())
+        val start = startDestination(
+            hasIdentity = locator.identityStore.hasIdentity(),
+            termsAccepted = locator.appPrefs.termsAcceptedVersion >= CURRENT_TERMS_VERSION,
+        )
 
         // 开屏层是深色底：播放期间系统栏按深色背景配色（浅色图标、导航栏不加浅色蒙层），播完换回跟随主题。
         if (splashVariant != null) {

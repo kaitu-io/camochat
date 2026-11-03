@@ -61,8 +61,15 @@ fun launchRequestFrom(intent: Intent): LaunchRequest {
     return LaunchRequest.decode(encoded)
 }
 
-/** Without an identity every launch (including pairing links and intake) runs onboarding first. */
-fun startDestination(hasIdentity: Boolean): String = if (hasIdentity) Routes.MAIN else Routes.ONBOARDING
+/**
+ * Without an identity every launch (including pairing links and intake) runs onboarding first;
+ * an existing user who has not accepted the current terms sees the terms gate first.
+ */
+fun startDestination(hasIdentity: Boolean, termsAccepted: Boolean): String = when {
+    !hasIdentity -> Routes.ONBOARDING
+    !termsAccepted -> Routes.TERMS
+    else -> Routes.MAIN
+}
 
 /** One navigation step; [CcNavGraph] executes them in order. */
 sealed interface NavStep {

@@ -92,4 +92,37 @@ class SettingsAboutTest {
     fun `privacy link is the site privacy page`() {
         assertThat(AboutLinks.privacyUrl("https://site.test/")).isEqualTo("https://site.test/privacy.html")
     }
+
+    @Test
+    fun `terms link is the site terms page`() {
+        assertThat(AboutLinks.termsUrl("https://site.test/")).isEqualTo("https://site.test/terms.html")
+    }
+
+    @Test
+    fun `about group has a terms of use row that opens on tap only`() {
+        var opened = 0
+        compose.setContent {
+            MoyuTheme {
+                MeContent(
+                    contentPadding = PaddingValues(),
+                    profile = {},
+                    settings = {
+                        SettingsSections(
+                            summaryPrivacy = false,
+                            onSummaryPrivacyChange = {},
+                            onDeleteAccount = {},
+                            versionName = "1",
+                            onOpenSource = {},
+                            onOpenTerms = { opened++ },
+                        )
+                    },
+                )
+            }
+        }
+        val title = ApplicationProvider.getApplicationContext<Context>().getString(R.string.settings_terms)
+        compose.onNodeWithText(title).performScrollTo().assertIsDisplayed()
+        assertThat(opened).isEqualTo(0)
+        compose.onNodeWithTag(SettingsTestTags.TERMS).performScrollTo().performClick()
+        assertThat(opened).isEqualTo(1)
+    }
 }

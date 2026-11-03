@@ -854,6 +854,10 @@ public enum L10n {
         NSLocalizedString("onboarding_tagline", bundle: .module, comment: "")
     }
 
+    public static var onboardingTermsAgree: String {
+        NSLocalizedString("onboarding_terms_agree", bundle: .module, comment: "")
+    }
+
     public static var pairingAddContact: String {
         NSLocalizedString("pairing_add_contact", bundle: .module, comment: "")
     }
@@ -1090,6 +1094,10 @@ public enum L10n {
         NSLocalizedString("settings_privacy_policy", bundle: .module, comment: "")
     }
 
+    public static var settingsTerms: String {
+        NSLocalizedString("settings_terms", bundle: .module, comment: "")
+    }
+
     public static var settingsVersion: String {
         NSLocalizedString("settings_version", bundle: .module, comment: "")
     }
@@ -1180,6 +1188,22 @@ public enum L10n {
 
     public static var statusSharedToast: String {
         NSLocalizedString("status_shared_toast", bundle: .module, comment: "")
+    }
+
+    public static var termsGateAccept: String {
+        NSLocalizedString("terms_gate_accept", bundle: .module, comment: "")
+    }
+
+    public static var termsGateBody: String {
+        NSLocalizedString("terms_gate_body", bundle: .module, comment: "")
+    }
+
+    public static var termsGateTitle: String {
+        NSLocalizedString("terms_gate_title", bundle: .module, comment: "")
+    }
+
+    public static var termsView: String {
+        NSLocalizedString("terms_view", bundle: .module, comment: "")
     }
 
     public static var threadBannerSayHi: String {

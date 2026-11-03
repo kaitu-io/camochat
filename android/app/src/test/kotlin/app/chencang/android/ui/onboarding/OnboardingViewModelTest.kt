@@ -75,6 +75,7 @@ class OnboardingViewModelTest {
             ioDispatcher = dispatcher,
         )
 
+        vm.setTermsChecked(true)
         vm.onGenerateClicked()
 
         assertThat(calls).isEqualTo(1)
@@ -94,6 +95,7 @@ class OnboardingViewModelTest {
             ioDispatcher = dispatcher,
         )
 
+        vm.setTermsChecked(true)
         vm.onGenerateClicked()
 
         vm.state.test {
@@ -120,6 +122,7 @@ class OnboardingViewModelTest {
             ioDispatcher = gateDispatcher,
         )
 
+        vm.setTermsChecked(true)
         vm.onGenerateClicked()
         vm.onGenerateClicked() // second click while in Generating
         vm.onGenerateClicked()
@@ -148,6 +151,7 @@ class OnboardingViewModelTest {
         val names = Names()
         val vm = vmWith(names)
         assertThat(vm.act.value).isEqualTo(OnboardingAct.Brand)
+        vm.setTermsChecked(true)
         vm.onGenerateClicked()
         assertThat(vm.act.value).isEqualTo(OnboardingAct.Name)
         vm.onNameSkipped()
@@ -160,6 +164,7 @@ class OnboardingViewModelTest {
     fun `continuing saves the normalised name`() = runTest {
         val names = Names()
         val vm = vmWith(names)
+        vm.setTermsChecked(true)
         vm.onGenerateClicked()
         vm.onNameEntered("  小明 ")
         assertThat(names.saved).containsExactly("小明")
@@ -170,7 +175,7 @@ class OnboardingViewModelTest {
     fun `a rebuilt view model resumes on the Name act from saved state`() = runTest {
         val names = Names()
         val saved = SavedStateHandle()
-        vmWith(names, saved = saved).onGenerateClicked()
+        vmWith(names, saved = saved).apply { setTermsChecked(true) }.onGenerateClicked()
         val rebuilt = vmWith(names, hasIdentity = true, saved = saved)
         assertThat(rebuilt.act.value).isEqualTo(OnboardingAct.Name)
     }
@@ -179,5 +184,30 @@ class OnboardingViewModelTest {
     fun `an existing identity with the prompt already done goes straight to Mechanism`() = runTest {
         val vm = vmWith(Names(done = true), hasIdentity = true)
         assertThat(vm.act.value).isEqualTo(OnboardingAct.Mechanism)
+    }
+
+    @Test
+    fun `generate does nothing until the terms are checked, then accepts once and generates`() = runTest {
+        var generated = 0
+        var accepted = 0
+        val vm = OnboardingViewModel(
+            hasIdentity = { false },
+            generateIdentity = { generated++ },
+            namePromptDone = { true },
+            saveName = {},
+            acceptTerms = { accepted++ },
+            ioDispatcher = dispatcher,
+        )
+        assertThat(vm.termsChecked.value).isFalse()
+        vm.onGenerateClicked()
+        assertThat(generated).isEqualTo(0)
+        assertThat(accepted).isEqualTo(0)
+        assertThat(vm.state.value).isEqualTo(OnboardingState.NeedsIdentity)
+
+        vm.setTermsChecked(true)
+        assertThat(vm.termsChecked.value).isTrue()
+        vm.onGenerateClicked()
+        assertThat(accepted).isEqualTo(1)
+        assertThat(generated).isEqualTo(1)
     }
 }

@@ -23,7 +23,11 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalContext
+import app.chencang.android.ui.settings.AboutLinks
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +47,8 @@ import app.chencang.design.moyuColors
 import app.chencang.shared.R
 
 object OnboardingTestTags {
+    const val TERMS_CHECKBOX = "onboarding-terms-checkbox"
+    const val TERMS_LINK = "onboarding-terms-link"
     const val CREATE_BUTTON = "onboarding-create-button"
     const val GENERATING_SPINNER = "onboarding-generating-spinner"
     const val ERROR_TEXT = "onboarding-error"
@@ -61,7 +67,9 @@ object OnboardingTestTags {
  * 不会因身份建好而反应式跳过后面的幕。
  */
 @Composable
-fun OnboardingScreen(viewModel: OnboardingViewModel, onDone: () -> Unit) {
+fun OnboardingScreen(viewModel: OnboardingViewModel, siteUrl: String, onDone: () -> Unit) {
+    val context = LocalContext.current
+    val termsChecked by viewModel.termsChecked.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val act by viewModel.act.collectAsStateWithLifecycle()
 
@@ -75,7 +83,13 @@ fun OnboardingScreen(viewModel: OnboardingViewModel, onDone: () -> Unit) {
         label = "onboarding-act",
     ) { targetAct ->
         when (targetAct) {
-            OnboardingAct.Brand -> BrandAct(state = state, onGenerateClicked = viewModel::onGenerateClicked)
+            OnboardingAct.Brand -> BrandAct(
+                state = state,
+                termsChecked = termsChecked,
+                onTermsCheckedChange = viewModel::setTermsChecked,
+                onOpenTerms = { AboutLinks.openTerms(context, siteUrl) },
+                onGenerateClicked = viewModel::onGenerateClicked,
+            )
             OnboardingAct.Name -> NamePrompt(
                 onContinue = viewModel::onNameEntered,
                 onSkip = viewModel::onNameSkipped,
@@ -87,7 +101,13 @@ fun OnboardingScreen(viewModel: OnboardingViewModel, onDone: () -> Unit) {
 }
 
 @Composable
-private fun BrandAct(state: OnboardingState, onGenerateClicked: () -> Unit) {
+private fun BrandAct(
+    state: OnboardingState,
+    termsChecked: Boolean,
+    onTermsCheckedChange: (Boolean) -> Unit,
+    onOpenTerms: () -> Unit,
+    onGenerateClicked: () -> Unit,
+) {
     Column(
         modifier = Modifier.fillMaxSize().padding(Moyu.Space.Xl),
         verticalArrangement = Arrangement.Center,
@@ -126,8 +146,25 @@ private fun BrandAct(state: OnboardingState, onGenerateClicked: () -> Unit) {
             Spacer(Modifier.height(Moyu.Space.M))
             Text(stringResource(R.string.onboarding_generating), fontSize = Moyu.FontSize.Callout, color = moyuColors.textSecondary)
         } else {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Checkbox(
+                    checked = termsChecked,
+                    onCheckedChange = onTermsCheckedChange,
+                    modifier = Modifier.testTag(OnboardingTestTags.TERMS_CHECKBOX),
+                )
+                Text(
+                    stringResource(R.string.onboarding_terms_agree),
+                    fontSize = Moyu.FontSize.Caption,
+                    color = moyuColors.textSecondary,
+                )
+            }
+            TextButton(onClick = onOpenTerms, modifier = Modifier.testTag(OnboardingTestTags.TERMS_LINK)) {
+                Text(stringResource(R.string.terms_view), fontSize = Moyu.FontSize.Caption)
+            }
+            Spacer(Modifier.height(Moyu.Space.M))
             Button(
                 modifier = Modifier.fillMaxWidth().testTag(OnboardingTestTags.CREATE_BUTTON),
+                enabled = termsChecked,
                 onClick = onGenerateClicked,
             ) {
                 Text(stringResource(if (state is OnboardingState.Failed) R.string.common_retry else R.string.onboarding_create_keys))

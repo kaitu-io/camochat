@@ -22,6 +22,11 @@ object AboutLinks {
 
     fun openPrivacy(context: Context, site: String) = open(context, privacyUrl(site))
 
+    /** 使用条款页（官网静态页）。 */
+    fun termsUrl(site: String): String = site + "terms.html"
+
+    fun openTerms(context: Context, site: String) = open(context, termsUrl(site))
+
     fun openSite(context: Context, site: String) = open(context, site)
 
     private fun open(context: Context, url: String) {

@@ -46,6 +46,7 @@ object SettingsTestTags {
     const val ABOUT = "settings-about"
     const val SHARE_APP = "settings-share-app"
     const val PRIVACY_POLICY = "settings-privacy-policy"
+    const val TERMS = "settings-terms"
 }
 
 /**
@@ -64,6 +65,7 @@ fun SettingsSections(
     onOpenSource: () -> Unit,
     onOpenAbout: () -> Unit = {},
     onOpenPrivacy: () -> Unit = {},
+    onOpenTerms: () -> Unit = {},
     onShareApp: (asZip: Boolean) -> Unit = {},
     canShareApk: Boolean = ChannelFeatures.canShareApk,
     onRunUatLoopback: (suspend () -> String)? = null,
@@ -159,6 +161,15 @@ fun SettingsSections(
                     .clickable(onClick = onOpenPrivacy)
                     .testTag(SettingsTestTags.PRIVACY_POLICY),
                 headlineContent = { Text(stringResource(R.string.settings_privacy_policy)) },
+            )
+            HorizontalDivider(color = moyuColors.borderHairline)
+            ListItem(
+                colors = ListItemDefaults.colors(containerColor = moyuColors.surfaceRaised),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onOpenTerms)
+                    .testTag(SettingsTestTags.TERMS),
+                headlineContent = { Text(stringResource(R.string.settings_terms)) },
             )
         }
 

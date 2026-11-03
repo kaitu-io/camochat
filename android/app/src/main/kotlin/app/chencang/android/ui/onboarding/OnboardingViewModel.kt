@@ -25,6 +25,7 @@ class OnboardingViewModel(
     private val generateIdentity: suspend () -> Unit,
     private val namePromptDone: () -> Boolean,
     private val saveName: (String?) -> Unit,
+    private val acceptTerms: () -> Unit = {},
     private val savedState: SavedStateHandle = SavedStateHandle(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
@@ -38,6 +39,15 @@ class OnboardingViewModel(
 
     /** Which act is on screen; survives recreation via [savedState]. */
     val act: StateFlow<OnboardingAct> = _act.asStateFlow()
+
+    private val _termsChecked = MutableStateFlow(false)
+
+    /** 「我已阅读并同意《使用条款》」勾选框；没勾就不能创建密钥。 */
+    val termsChecked: StateFlow<Boolean> = _termsChecked.asStateFlow()
+
+    fun setTermsChecked(checked: Boolean) {
+        _termsChecked.value = checked
+    }
 
     init {
         if (_act.value != OnboardingAct.Brand) _state.value = OnboardingState.Done
@@ -70,6 +80,8 @@ class OnboardingViewModel(
 
     fun onGenerateClicked() {
         if (_state.value is OnboardingState.Generating) return
+        if (!_termsChecked.value) return
+        acceptTerms()
         _state.value = OnboardingState.Generating
         viewModelScope.launch {
             try {

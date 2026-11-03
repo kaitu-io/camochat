@@ -23,6 +23,7 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -68,6 +69,7 @@ import app.chencang.android.update.NoUpdateController
 import app.chencang.android.update.UpdateController
 import app.chencang.design.Moyu
 import app.chencang.shared.CcServiceLocator
+import app.chencang.android.ui.terms.TermsGateScreen
 import app.chencang.shared.R
 import app.chencang.shared.intake.IntakeFailure
 import app.chencang.shared.intake.IntakeOutcome
@@ -78,6 +80,8 @@ import kotlinx.coroutines.launch
 
 object Routes {
     const val ONBOARDING = "onboarding"
+    /** 老用户的一次性使用条款同意页。 */
+    const val TERMS = "terms"
     /** 三个顶层 tab 的唯一宿主：底栏长在这一屏里面，其它路由因此没有底栏。 */
     const val MAIN = "main"
     /** `role` ∈ `initiator | redeemer | resume-invite | resume-response`；`id` 给两种恢复入口用。 */
@@ -174,10 +178,23 @@ fun CcNavGraph(
             val vm: OnboardingViewModel = viewModel(factory = onboardingFactory(locator))
             // Onboarding's 幕 2「我明白了」goes to the main shell (会话 tab, 空态 = 幕 3),
             // then whatever the app was opened for (a pairing code, a link, a decrypted message).
-            OnboardingScreen(viewModel = vm, onDone = {
+            OnboardingScreen(viewModel = vm, siteUrl = locator.configRepository.config.value.shareSite, onDone = {
                 val request = if (launchHandled) LaunchRequest.None else LaunchRequest.decode(pendingLaunch)
                 runLaunch(afterOnboarding(request))
             })
+        }
+
+        composable(Routes.TERMS) {
+            val site = locator.configRepository.config.value.shareSite
+            // Same replay as after onboarding: land on main, then whatever the app was opened for.
+            TermsGateScreen(
+                onOpenTerms = { AboutLinks.openTerms(context, site) },
+                onAccept = {
+                    locator.appPrefs.acceptTerms()
+                    val request = if (launchHandled) LaunchRequest.None else LaunchRequest.decode(pendingLaunch)
+                    runLaunch(afterOnboarding(request))
+                },
+            )
         }
 
         composable(Routes.MAIN) { entry ->
@@ -385,6 +402,7 @@ fun CcNavGraph(
                 onOpenSource = { AboutLinks.openSource(context, site) },
                 onOpenSite = { AboutLinks.openSite(context, site) },
                 onOpenPrivacy = { AboutLinks.openPrivacy(context, site) },
+                onOpenTerms = { AboutLinks.openTerms(context, site) },
                 onBack = { nav.popBackStack() },
             )
             if (shareDialog) {
@@ -403,7 +421,8 @@ fun CcNavGraph(
 /** Carries out one [NavStep] of a [LaunchRequest]. */
 private fun NavController.execute(step: NavStep) {
     when (step) {
-        NavStep.ToMain -> navigate(Routes.MAIN) { popUpTo(Routes.ONBOARDING) { inclusive = true } }
+        // The start destination is onboarding or the terms gate whenever ToMain runs; pop whichever it is.
+        NavStep.ToMain -> navigate(Routes.MAIN) { popUpTo(graph.findStartDestination().id) { inclusive = true } }
         is NavStep.ToThread -> openThreadOnChats(step.peerUsername)
         is NavStep.ToWizard ->
             if (step.role == "redeemer") {
@@ -457,6 +476,7 @@ private fun MeSettings(
         }) else null,
         onOpenSource = { AboutLinks.openSource(context, locator.configRepository.config.value.shareSite) },
         onOpenPrivacy = { AboutLinks.openPrivacy(context, locator.configRepository.config.value.shareSite) },
+        onOpenTerms = { AboutLinks.openTerms(context, locator.configRepository.config.value.shareSite) },
         onOpenAbout = onOpenAbout,
         onShareApp = { asZip -> scope.launch { ApkShare.share(context, asZip) } },
         onRunUatLoopback = if (BuildConfig.DEBUG) ({ UatLoopback.runE2E() }) else null,
@@ -483,6 +503,7 @@ private fun onboardingFactory(locator: CcServiceLocator) =
                 generateIdentity = { locator.identityStore.generateAndSave().close() },
                 namePromptDone = { locator.appPrefs.namePromptDone },
                 saveName = { name -> locator.appPrefs.saveAnsweredName(name) },
+                acceptTerms = { locator.appPrefs.acceptTerms() },
                 savedState = extras.createSavedStateHandle(),
             ) as T
         }

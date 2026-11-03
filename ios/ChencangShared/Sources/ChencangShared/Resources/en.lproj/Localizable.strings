@@ -206,6 +206,7 @@
 "onboarding_step_encrypt" = "Send — write in CamoChat, encrypt, then paste it into your chat app";
 "onboarding_step_send" = "Receive messages and invites — long-press to copy the whole message in your chat app";
 "onboarding_tagline" = "Encrypted chats only the other person can read";
+"onboarding_terms_agree" = "I have read and agree to the Terms of Use";
 "pairing_add_contact" = "Add contact";
 "pairing_delete_body" = "They'll still have your code, but you won't be able to finish adding them when they send theirs back. You'll need to start again.";
 "pairing_delete_title" = "Delete this pairing code?";
@@ -265,6 +266,7 @@
 "settings_no_browser" = "No browser available";
 "settings_privacy" = "Privacy";
 "settings_privacy_policy" = "Privacy policy";
+"settings_terms" = "Terms of use";
 "settings_version" = "Version";
 "share_app_hint" = "Your friend opens the file to install. If it arrives as .apk.1 in a chat app, rename it or send the zip.";
 "share_app_preparing" = "Preparing the file…";
@@ -288,6 +290,10 @@
 "status_not_sent_tap_again" = "Not sent · tap to share again";
 "status_shared" = "Shared";
 "status_shared_toast" = "Shared";
+"terms_gate_accept" = "Agree and continue";
+"terms_gate_body" = "Please read and agree to the Terms of Use before continuing. We have zero tolerance for objectionable content and abuse.";
+"terms_gate_title" = "Terms of Use updated";
+"terms_view" = "View Terms of Use";
 "thread_banner_say_hi" = "Send them a message — if they can open it, you're connected";
 "thread_banner_waiting_peer" = "Waiting for them to finish adding you. Their first message means you're connected";
 "thread_copy_encrypted" = "Copy encrypted message";

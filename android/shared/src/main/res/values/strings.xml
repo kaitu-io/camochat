@@ -237,6 +237,7 @@
     <string name="onboarding_step_encrypt">Send — write in CamoChat, encrypt, then paste it into your chat app</string>
     <string name="onboarding_step_send">Receive messages and invites — long-press to copy the whole message in your chat app</string>
     <string name="onboarding_tagline">Encrypted chats only the other person can read</string>
+    <string name="onboarding_terms_agree">I have read and agree to the Terms of Use</string>
     <string name="pairing_add_contact">Add contact</string>
     <string name="pairing_delete_body">They\'ll still have your code, but you won\'t be able to finish adding them when they send theirs back. You\'ll need to start again.</string>
     <string name="pairing_delete_title">Delete this pairing code?</string>
@@ -296,6 +297,7 @@
     <string name="settings_no_browser">No browser available</string>
     <string name="settings_privacy">Privacy</string>
     <string name="settings_privacy_policy">Privacy policy</string>
+    <string name="settings_terms">Terms of use</string>
     <string name="settings_version">Version</string>
     <string name="share_app_hint">Your friend opens the file to install. If it arrives as .apk.1 in a chat app, rename it or send the zip.</string>
     <string name="share_app_preparing">Preparing the file…</string>
@@ -319,6 +321,10 @@
     <string name="status_not_sent_tap_again">Not sent · tap to share again</string>
     <string name="status_shared">Shared</string>
     <string name="status_shared_toast">Shared</string>
+    <string name="terms_gate_accept">Agree and continue</string>
+    <string name="terms_gate_body">Please read and agree to the Terms of Use before continuing. We have zero tolerance for objectionable content and abuse.</string>
+    <string name="terms_gate_title">Terms of Use updated</string>
+    <string name="terms_view">View Terms of Use</string>
     <string name="thread_banner_say_hi">Send them a message — if they can open it, you\'re connected</string>
     <string name="thread_banner_waiting_peer">Waiting for them to finish adding you. Their first message means you\'re connected</string>
     <string name="thread_copy_encrypted">Copy encrypted message</string>

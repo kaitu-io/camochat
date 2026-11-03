@@ -86,7 +86,7 @@ class AppPrefs(context: Context) {
     fun clearMyProfile() {
         @Suppress("ApplySharedPref")
         val written = prefs.edit()
-            .remove(KEY_MY_NAME).remove(KEY_MY_AVATAR_GLYPH).remove(KEY_MY_AVATAR_COLOR).remove(KEY_NAME_PROMPT_DONE)
+            .remove(KEY_MY_NAME).remove(KEY_MY_AVATAR_GLYPH).remove(KEY_MY_AVATAR_COLOR).remove(KEY_NAME_PROMPT_DONE).remove(KEY_TERMS_ACCEPTED_VERSION)
             .commit()
         if (!written) throw IOException("clearMyProfile: commit failed")
         _myName.value = ""
@@ -114,6 +114,15 @@ class AppPrefs(context: Context) {
 
     fun setNamePromptDone(done: Boolean) {
         prefs.edit().putBoolean(KEY_NAME_PROMPT_DONE, done).apply()
+    }
+
+    /** 已同意的使用条款版本；0 = 从未同意。直读 SharedPreferences，不走 StateFlow。 */
+    val termsAcceptedVersion: Int
+        get() = prefs.getInt(KEY_TERMS_ACCEPTED_VERSION, 0)
+
+    /** 记下当前版本的使用条款已同意。 */
+    fun acceptTerms() {
+        prefs.edit().putInt(KEY_TERMS_ACCEPTED_VERSION, app.chencang.shared.moderation.CURRENT_TERMS_VERSION).apply()
     }
 
     /** 「你的名字」答完：[name] 非空 = 继续并存名字，null = 跳过；两种都记为问过。 */
@@ -144,6 +153,7 @@ class AppPrefs(context: Context) {
         const val KEY_PASTE_BAR_CONSUMED = "paste_bar_consumed_stamp"
         const val KEY_THREAD_BANNER_DISMISSED = "thread_banner_dismissed"
         const val KEY_NAME_PROMPT_DONE = "name_prompt_done"
+        const val KEY_TERMS_ACCEPTED_VERSION = "terms_accepted_version"
         const val KEY_MY_NAME = "my_name"
         const val KEY_MY_AVATAR_GLYPH = "my_avatar_glyph"
         const val KEY_MY_AVATAR_COLOR = "my_avatar_color"

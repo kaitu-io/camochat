@@ -123,4 +123,15 @@ class AppPrefsTest {
         a.clearMyProfile()
         assertFalse(AppPrefs(context).namePromptDone)
     }
+
+    @Test
+    fun `terms acceptance defaults to 0, records the current version and is cleared with the profile`() {
+        val a = AppPrefs(ApplicationProvider.getApplicationContext())
+        assertEquals(0, a.termsAcceptedVersion)
+        a.acceptTerms()
+        assertEquals(app.chencang.shared.moderation.CURRENT_TERMS_VERSION, AppPrefs(ApplicationProvider.getApplicationContext()).termsAcceptedVersion)
+        assertEquals(1, a.termsAcceptedVersion)
+        a.clearMyProfile()
+        assertEquals(0, a.termsAcceptedVersion)
+    }
 }
