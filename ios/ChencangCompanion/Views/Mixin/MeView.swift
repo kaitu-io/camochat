@@ -29,6 +29,7 @@ struct MeView: View {
     @State private var showWipeFailedAlert = false
     @State private var showSource = false
     @State private var showPrivacy = false
+    @State private var showTerms = false
 
     #if DEBUG
     @State private var uatStatus: String = ""
@@ -75,6 +76,9 @@ struct MeView: View {
         }
         .sheet(isPresented: $showSource) {
             SafariView(url: AppInfo.sourceURL(site: ConfigRepository.shared.current().shareSite)).ignoresSafeArea()
+        }
+        .sheet(isPresented: $showTerms) {
+            SafariView(url: AppInfo.termsURL(site: ConfigRepository.shared.current().shareSite)).ignoresSafeArea()
         }
         .sheet(isPresented: $showPrivacy) {
             SafariView(url: AppInfo.privacyURL(site: ConfigRepository.shared.current().shareSite)).ignoresSafeArea()
@@ -148,6 +152,11 @@ struct MeView: View {
                 showPrivacy = true
             } label: {
                 settingsRow(title: L10n.settingsPrivacyPolicy)
+            }
+            Button {
+                showTerms = true
+            } label: {
+                settingsRow(title: L10n.settingsTerms)
             }
         } header: {
             sectionHeader(L10n.settingsAbout)
@@ -285,6 +294,7 @@ struct MeView: View {
         let result = await wiper.wipeAll()
         if result.allSucceeded {
             model.apply(ShellNav.accountWiped())
+            model.termsAccepted = false
             model.showOnboarding = true
         } else {
             showWipeFailedAlert = true

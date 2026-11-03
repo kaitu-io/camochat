@@ -8,6 +8,9 @@ public enum AppInfo {
     /// 隐私政策页(官网静态页,与 `sourceURL` 同一站点;同样只在用户点击时由 Safari 组件加载)。
     public static func privacyURL(site: String) -> URL { URL(string: site + "privacy.html")! }
 
+    /// 使用条款页(同一站点的静态页)。
+    public static func termsURL(site: String) -> URL { URL(string: site + "terms.html")! }
+
     public static func versionText(info: [String: Any]?) -> String {
         let short = info?["CFBundleShortVersionString"] as? String ?? "—"
         guard let build = info?["CFBundleVersion"] as? String else { return short }

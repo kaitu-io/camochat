@@ -67,6 +67,21 @@ public enum MyProfileKeys {
     /// 「你的名字」问过了(继续或跳过都算)。与昵称同一份 App Group 存储,删除账号时一并重置。
     public static let namePromptDone = "cc.namePromptDone.v1"
 
+    /// 已同意的使用条款版本(0 = 没同意过)。与昵称同一份存储,删除账号时一并重置。
+    public static let termsAcceptedVersion = "cc.termsAcceptedVersion.v1"
+
+    public static func termsAcceptedVersion(defaults: UserDefaults?) -> Int {
+        defaults?.integer(forKey: termsAcceptedVersion) ?? 0
+    }
+
+    public static func isTermsAccepted(defaults: UserDefaults?) -> Bool {
+        termsAcceptedVersion(defaults: defaults) >= Terms.currentVersion
+    }
+
+    public static func recordTermsAccepted(defaults: UserDefaults?) {
+        defaults?.set(Terms.currentVersion, forKey: termsAcceptedVersion)
+    }
+
     public static func isNamePromptDone(defaults: UserDefaults?) -> Bool {
         defaults?.bool(forKey: namePromptDone) ?? false
     }
@@ -86,7 +101,7 @@ public enum MyProfileKeys {
     /// 删除账号时清掉资料键(昵称、头像两键、问过名字标记);`defaults` 为空(App Group 不可用)则什么都不做。
     public static func clear(defaults: UserDefaults?) {
         guard let defaults else { return }
-        for key in [name, avatarGlyph, avatarColor, namePromptDone] {
+        for key in [name, avatarGlyph, avatarColor, namePromptDone, termsAcceptedVersion] {
             defaults.removeObject(forKey: key)
         }
     }

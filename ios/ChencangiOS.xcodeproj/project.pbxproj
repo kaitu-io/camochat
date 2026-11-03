@@ -64,6 +64,7 @@
 		FD1417A8CC33F0EA680AB68A /* UATSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9DA458E66F8EDBF380D3336 /* UATSupport.swift */; };
 		FE35862F3B300BD69A9DE29C /* UATShareFirstTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE93494131F729BCD80B3533 /* UATShareFirstTests.swift */; };
 		FEAD471477ED9BCEDA63A05C /* PasteBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5686ACF7190DBC6383DEC863 /* PasteBarView.swift */; };
+		FF3F24124B74349CEB260CB5 /* TermsGateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A66B9DDBE7E2D5ACF922C38F /* TermsGateView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -138,6 +139,7 @@
 		A570122CC53F62F0C4DF13CA /* ImageViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageViewer.swift; sourceTree = "<group>"; };
 		A57D0CD5FB8E6FBA25A5DBEC /* MediaItemRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaItemRow.swift; sourceTree = "<group>"; };
 		A60F10E63BDE75B03D7DF1F3 /* ChencangAction.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ChencangAction.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A66B9DDBE7E2D5ACF922C38F /* TermsGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermsGateView.swift; sourceTree = "<group>"; };
 		AA9E27F73AF598D7F3BAA329 /* ForwardPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForwardPickerSheet.swift; sourceTree = "<group>"; };
 		AAA0EDD992574D36E4AEBD6F /* swift */ = {isa = PBXFileReference; lastKnownFileType = folder; name = swift; path = ../bindings/swift; sourceTree = SOURCE_ROOT; };
 		AE93494131F729BCD80B3533 /* UATShareFirstTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UATShareFirstTests.swift; sourceTree = "<group>"; };
@@ -273,6 +275,7 @@
 			children = (
 				839D11439314E7B84CDF57A5 /* NamePromptView.swift */,
 				F64C404194CF35CD2E7BDC0D /* OnboardingView.swift */,
+				A66B9DDBE7E2D5ACF922C38F /* TermsGateView.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -546,6 +549,7 @@
 				92817C8C78543C72518879F8 /* QRScannerView.swift in Sources */,
 				531F458D9A749CCEBF291B93 /* SafariView.swift in Sources */,
 				1C720EF8B10834F5D149FA0D /* SplashOverlay.swift in Sources */,
+				FF3F24124B74349CEB260CB5 /* TermsGateView.swift in Sources */,
 				269839C34F9665FC613CE115 /* ThreadBannerBar.swift in Sources */,
 				A786D7A10ABBDC1F8C5F182E /* UATThreadStress.swift in Sources */,
 				6458C59143FEC991051CBD88 /* VideoPlayerSheet.swift in Sources */,

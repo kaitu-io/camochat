@@ -135,7 +135,10 @@ private struct RootView: View {
                 OnboardingView(viewModel: OnboardingViewModel(
                     identityStore: identityStore,
                     namePromptDone: { MyProfileKeys.isNamePromptDone(defaults: UserDefaults(suiteName: SharedAppGroupDefaults.suiteName)) },
-                    saveName: { MyProfileKeys.recordNamePromptAnswer($0, defaults: UserDefaults(suiteName: SharedAppGroupDefaults.suiteName)) }))
+                    saveName: { MyProfileKeys.recordNamePromptAnswer($0, defaults: UserDefaults(suiteName: SharedAppGroupDefaults.suiteName)) },
+                    acceptTerms: { model.acceptTerms() }))
+            } else if !model.termsAccepted {
+                TermsGateView()
             } else {
                 // 单条 NavigationStack + tab 根(spec §4.1):`model.path` 的语义不变,tab 栏随整屏 push 一起滑走。
                 NavigationStack(path: $model.path) {

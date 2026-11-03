@@ -67,12 +67,15 @@ final class MixinAppModel: ObservableObject {
     /// 触发加载)甄别老用户 vs 新用户;新用户建号后仍留在 onboarding 里,直到
     /// 幕 2「我明白了」显式翻它。
     @Published var showOnboarding: Bool
+    /// 已同意当前版本使用条款。新用户在引导品牌幕勾选时记下;老用户升级后由 `TermsGateView` 一次性补同意。
+    @Published var termsAccepted: Bool
     /// 引导期间到达的向导请求(配对链接、扩展交来的配对码)先存在这里,引导走完再弹。
     private var onboardingGate = OnboardingGate()
     private var protectedDataObserver: NSObjectProtocol?
 
     init(identityStore: IdentityStore) {
         self.showOnboarding = !identityStore.hasPersistedIdentity()
+        self.termsAccepted = MyProfileKeys.isTermsAccepted(defaults: UserDefaults(suiteName: SharedAppGroupDefaults.suiteName))
         let dir = ChatStore.appGroupDirectory()
             ?? FileManager.default.temporaryDirectory.appendingPathComponent("cc-chat-fallback")
         // 容器拿不到只会发生在异常环境(无 App Group 授权的构建);fallback 保证不崩,留痕走日志。
@@ -159,7 +162,7 @@ final class MixinAppModel: ObservableObject {
     /// 弹「添加联系人」向导的唯一入口(菜单、空状态、来件、链接、交接槽都走这里):
     /// 引导中先暂存,引导结束(`finishOnboarding`)再弹;否则立即弹。
     func presentWizard(_ entry: WizardEntry) {
-        if let entry = onboardingGate.offer(entry, onboarding: showOnboarding) {
+        if let entry = onboardingGate.offer(entry, onboarding: showOnboarding || !termsAccepted) {
             wizard = entry
         }
     }
@@ -167,7 +170,7 @@ final class MixinAppModel: ObservableObject {
     /// 唤醒进来的配对链接解不出码:收起已开着的向导(根上的提示框叠不到 sheet 上),等收起动画过去再弹「不完整」提示。
     /// 引导期间不打断(此时没有可提示的上下文,用户走完引导自会再点链接)。
     func rejectPairingLink() {
-        guard !showOnboarding else { return }
+        guard !showOnboarding, termsAccepted else { return }
         wizard = nil
         DispatchQueue.main.asyncAfter(deadline: .now() + Moyu.Motion.standard / 1000) { [weak self] in
             self?.intakeFailure = .incomplete
@@ -177,9 +180,19 @@ final class MixinAppModel: ObservableObject {
     /// 引导最后一步点完:收起引导;引导期间有暂存的向导请求就接着弹。
     func finishOnboarding() {
         showOnboarding = false
-        if let entry = onboardingGate.release() {
-            wizard = entry
-        }
+        releaseHeldWizard()
+    }
+
+    /// 记下同意当前版本条款;条款闸门期间暂存的向导请求在这里放行。
+    func acceptTerms() {
+        MyProfileKeys.recordTermsAccepted(defaults: UserDefaults(suiteName: SharedAppGroupDefaults.suiteName))
+        termsAccepted = true
+        if !showOnboarding { releaseHeldWizard() }
+    }
+
+    private func releaseHeldWizard() {
+        guard termsAccepted, let entry = onboardingGate.release() else { return }
+        wizard = entry
     }
 
     /// 把 `ShellNav` 算出的导航快照落到界面状态。

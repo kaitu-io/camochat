@@ -19,13 +19,17 @@ public final class OnboardingViewModel: ObservableObject {
     private let identityStore: IdentityStore
     private let namePromptDone: () -> Bool
     private let saveName: (String?) -> Void
+    private let acceptTerms: () -> Void
+    /// 品牌幕的「我已阅读并同意使用条款」勾选;没勾不能建身份。
+    @Published public var termsChecked = false
 
     /// `namePromptDone` / `saveName` 必须显式注入(没有默认值,免得默默关掉问名字):
     /// `saveName(nil)` = 跳过,只记「问过了」;非 nil = 存昵称并记「问过了」。
-    public init(identityStore: IdentityStore, namePromptDone: @escaping () -> Bool, saveName: @escaping (String?) -> Void) {
+    public init(identityStore: IdentityStore, namePromptDone: @escaping () -> Bool, saveName: @escaping (String?) -> Void, acceptTerms: @escaping () -> Void) {
         self.identityStore = identityStore
         self.namePromptDone = namePromptDone
         self.saveName = saveName
+        self.acceptTerms = acceptTerms
     }
 
     /// 该显示哪一幕:没有身份一律从品牌幕开始(账号被抹掉后残留的旧值不能跳过建号);有身份时采用存下的幕,
@@ -51,6 +55,8 @@ public final class OnboardingViewModel: ObservableObject {
     }
 
     public func createIdentity() async {
+        guard termsChecked else { return }
+        acceptTerms()
         state = .creatingIdentity
         errorMessage = nil
         do {

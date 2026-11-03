@@ -73,6 +73,7 @@ struct OnboardingView: View {
 private struct BrandActView: View {
     @ObservedObject var viewModel: OnboardingViewModel
     let onCreated: () -> Void
+    @State private var showTerms = false
 
     var body: some View {
         VStack(spacing: Moyu.Space.xl) {
@@ -100,6 +101,28 @@ private struct BrandActView: View {
 
             Spacer()
 
+            HStack(alignment: .top, spacing: Moyu.Space.s) {
+                Button {
+                    viewModel.termsChecked.toggle()
+                } label: {
+                    Image(systemName: viewModel.termsChecked ? "checkmark.square.fill" : "square")
+                        .font(moyuFont(Moyu.FontSize.title))
+                        .foregroundStyle(viewModel.termsChecked ? Moyu.Palette.accentPrimary : Moyu.Palette.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.onboardingTermsAgree)
+                .accessibilityAddTraits(viewModel.termsChecked ? .isSelected : [])
+                VStack(alignment: .leading, spacing: Moyu.Space.xs) {
+                    Text(L10n.onboardingTermsAgree)
+                        .font(moyuFont(Moyu.FontSize.callout))
+                        .foregroundStyle(Moyu.Palette.textPrimary)
+                    Button(L10n.termsView) { showTerms = true }
+                        .font(moyuFont(Moyu.FontSize.callout))
+                        .tint(Moyu.Palette.accentPrimary)
+                }
+                Spacer(minLength: 0)
+            }
+
             Button {
                 Task {
                     await viewModel.createIdentity()
@@ -115,7 +138,10 @@ private struct BrandActView: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(Moyu.Palette.accentPrimary)
-            .disabled(viewModel.state == .creatingIdentity)
+            .disabled(viewModel.state == .creatingIdentity || !viewModel.termsChecked)
+        }
+        .sheet(isPresented: $showTerms) {
+            SafariView(url: AppInfo.termsURL(site: ConfigRepository.shared.current().shareSite)).ignoresSafeArea()
         }
     }
 }

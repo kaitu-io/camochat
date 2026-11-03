@@ -5,8 +5,9 @@ import XCTest
 final class OnboardingViewModelTests: XCTestCase {
     func testReachesComplete() async {
         let store = IdentityStore(keychain: FakeKeychain())
-        let vm = OnboardingViewModel(identityStore: store, namePromptDone: { true }, saveName: { _ in })
+        let vm = OnboardingViewModel(identityStore: store, namePromptDone: { true }, saveName: { _ in }, acceptTerms: {})
         XCTAssertEqual(vm.state, .welcome)
+        vm.termsChecked = true
         await vm.createIdentity()
         XCTAssertEqual(vm.state, .complete)
         XCTAssertNil(vm.errorMessage)
@@ -15,7 +16,22 @@ final class OnboardingViewModelTests: XCTestCase {
     private func makeVM(done: Bool, saved: @escaping (String?) -> Void = { _ in }) -> OnboardingViewModel {
         OnboardingViewModel(
             identityStore: IdentityStore(keychain: FakeKeychain()),
-            namePromptDone: { done }, saveName: saved)
+            namePromptDone: { done }, saveName: saved, acceptTerms: {})
+    }
+
+    func testUncheckedTermsBlocksIdentityCreation() async {
+        let store = IdentityStore(keychain: FakeKeychain())
+        var accepted = 0
+        let vm = OnboardingViewModel(identityStore: store, namePromptDone: { true }, saveName: { _ in }, acceptTerms: { accepted += 1 })
+        await vm.createIdentity()
+        XCTAssertEqual(vm.state, .welcome)
+        XCTAssertFalse(store.hasPersistedIdentity())
+        XCTAssertEqual(accepted, 0)
+        vm.termsChecked = true
+        await vm.createIdentity()
+        XCTAssertEqual(vm.state, .complete)
+        XCTAssertTrue(store.hasPersistedIdentity())
+        XCTAssertEqual(accepted, 1)
     }
 
     func testActAfterIdentityAsksNameUnlessAlreadyAnswered() {
