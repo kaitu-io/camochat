@@ -226,6 +226,8 @@ class ConversationViewModelTest {
     /** 交给上传引擎的 messageId（VM 测试不跑上传：seal 即可分享，上传是另一段）。 */
     private val scheduledUploads = mutableListOf<String>()
 
+    private val blockCalls = mutableListOf<Pair<String, Boolean>>()
+
     /** 手动重试交给上传引擎「现在就试」（enqueueNow）的 messageId。 */
     private val uploadedNow = mutableListOf<String>()
 
@@ -256,6 +258,7 @@ class ConversationViewModelTest {
         return ConversationViewModel(
             r, "alice", contacts, sender, downloader, preparer, prefs, intake, pollClock,
             intakeDispatcher = dispatcher,
+            setBlocked = { fp, b -> blockCalls += fp to b },
         )
     }
 
@@ -315,6 +318,58 @@ class ConversationViewModelTest {
             assertThat(list.map { it.username }).containsExactly("bob")
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun `otherContacts excludes blocked contacts but the thread contact stays`() = runTest(dispatcher) {
+        val blockedCarol = contact("carol").copy(blocked = true)
+        val vm = newVm(contacts = flowOf(listOf(contact("bob"), blockedCarol, contact("alice").copy(blocked = true))))
+        vm.otherContacts.test(timeout = 10.seconds) {
+            var list = awaitItem()
+            while (list.isEmpty()) list = awaitItem()
+            assertThat(list.map { it.username }).containsExactly("bob")
+            cancelAndIgnoreRemainingEvents()
+        }
+        vm.contact.test(timeout = 10.seconds) {
+            var c = awaitItem()
+            while (c == null) c = awaitItem()
+            assertThat(c.username).isEqualTo("alice")
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `reportMail builds a text report for the peer`() = runTest(dispatcher) {
+        val vm = newVm(contacts = flowOf(listOf(contact("alice"))))
+        vm.contact.test(timeout = 10.seconds) { var c = awaitItem(); while (c == null) c = awaitItem(); cancelAndIgnoreRemainingEvents() }
+        val m = ChatMessage("r1", "alice", ChatMessage.DIRECTION_IN, "hello", 0L)
+        val mail = vm.reportMail(m, "1.0.3")!!
+        assertThat(mail.subject).isEqualTo("CamoChat report / 举报")
+        assertThat(mail.body).contains("Reported contact: alice")
+        assertThat(mail.body).contains("Content:\nhello\n")
+    }
+
+    @Test
+    fun `reportMail lists the blob ids of the message media`() = runTest(dispatcher) {
+        val vm = newVm(contacts = flowOf(listOf(contact("alice"))))
+        vm.contact.test(timeout = 10.seconds) { var c = awaitItem(); while (c == null) c = awaitItem(); cancelAndIgnoreRemainingEvents() }
+        db.dao().insert(ChatMessage("r2", "alice", ChatMessage.DIRECTION_IN, "", 0L, kind = ChatMessage.KIND_IMAGE))
+        db.mediaDao().insertAll(
+            listOf("idA", "idB").mapIndexed { i, id ->
+                MediaItem("r2", i, MediaConstants.KIND_IMAGE, 0, 1, 1, 10L, ByteArray(32), id, MediaItem.STATE_READY)
+            },
+        )
+        val mail = vm.reportMail(db.dao().getById("r2")!!, "1.0.3")!!
+        assertThat(mail.body).contains("Media IDs: idA,idB\n")
+        assertThat(mail.body).doesNotContain("Content:")
+    }
+
+    @Test
+    fun `blockPeer blocks the thread contact by fingerprint`() = runTest(dispatcher) {
+        val vm = newVm(contacts = flowOf(listOf(contact("alice"))))
+        vm.contact.test(timeout = 10.seconds) { var c = awaitItem(); while (c == null) c = awaitItem(); cancelAndIgnoreRemainingEvents() }
+        vm.blockPeer()
+        assertThat(blockCalls).containsExactly("fp-alice" to true)
     }
 
     @Test

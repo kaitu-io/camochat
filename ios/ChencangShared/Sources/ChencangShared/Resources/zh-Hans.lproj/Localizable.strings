@@ -102,6 +102,7 @@
 "conversations_preview_no_messages" = "还没有消息，发一句打个招呼";
 "conversations_preview_waiting_peer" = "等对方完成添加";
 "conversations_tab" = "会话";
+"filtered_cover" = "可能含不良内容，点按查看";
 "intake_action_open_app" = "打开陈仓";
 "intake_already_in_thread" = "这条消息已经在对话里了";
 "intake_blocked" = "这条消息来自已拉黑的联系人，未显示";
@@ -261,7 +262,10 @@
 "paste_bar_not_ours" = "剪贴板里不是陈仓的内容";
 "paste_bar_read_failed" = "读不到剪贴板，请到输入框长按粘贴";
 "paste_bar_text" = "你刚复制了内容";
+"preview_filtered" = "[可能含不良内容]";
 "process_text_label" = "陈仓解密";
+"report_also_block_ok" = "拉黑";
+"report_also_block_title" = "同时拉黑 TA？";
 "scanner_photo_no_code" = "这张图里没有找到陈仓的二维码";
 "scanner_pick_photo" = "从相册选";
 "settings_about" = "关于";
@@ -316,6 +320,7 @@
 "thread_empty_title" = "还没有消息";
 "thread_no_share_target" = "没有可分享的 App";
 "thread_readd_contact" = "去重新添加";
+"thread_report" = "举报";
 "thread_send_failed" = "发送失败，请重试";
 "thread_unsupported_message" = "这是一条新类型消息，请升级陈仓";
 "thread_unverified_subtitle" = "未核对 · 点这里核对";

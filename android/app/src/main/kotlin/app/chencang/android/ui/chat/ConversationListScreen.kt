@@ -1,5 +1,6 @@
 package app.chencang.android.ui.chat
 
+import app.chencang.shared.moderation.ContentFilter
 import android.text.format.DateUtils
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -74,6 +75,7 @@ fun ConversationListContent(
     onOpenThread: (username: String) -> Unit,
     onAddContact: () -> Unit,
     onGoToContacts: () -> Unit,
+    contentFilter: ContentFilter? = null,
 ) {
     val awaitingCount by viewModel.awaitingCount.collectAsStateWithLifecycle()
     // 等待行在最上面；有它时，顶部内边距给外层，列表本体只留其余三边。
@@ -100,7 +102,7 @@ fun ConversationListContent(
                     end = contentPadding.calculateEndPadding(LocalLayoutDirection.current),
                     bottom = contentPadding.calculateBottomPadding(),
                 ),
-                onOpenThread, onAddContact, onGoToContacts,
+                onOpenThread, onAddContact, onGoToContacts, contentFilter,
             )
         }
     }
@@ -113,6 +115,7 @@ private fun ConversationListBody(
     onOpenThread: (username: String) -> Unit,
     onAddContact: () -> Unit,
     onGoToContacts: () -> Unit,
+    contentFilter: ContentFilter?,
 ) {
     val rows by viewModel.rows.collectAsStateWithLifecycle()
     val summaryPrivacy by viewModel.summaryPrivacy.collectAsStateWithLifecycle()
@@ -178,7 +181,7 @@ private fun ConversationListBody(
             modifier = Modifier.fillMaxSize().testTag(ConversationListTestTags.LIST),
         ) {
             items(rows, key = { it.contact.fingerprintHex }) { row ->
-                ConversationRow(row, summaryPrivacy, onOpenThread)
+                ConversationRow(row, summaryPrivacy, onOpenThread, contentFilter)
                 HorizontalDivider(color = moyuColors.borderHairline, thickness = Moyu.Radius.BubbleTail / 4)
             }
         }
@@ -190,6 +193,7 @@ private fun ConversationRow(
     row: ConversationListViewModel.Row,
     summaryPrivacy: Boolean,
     onOpenThread: (String) -> Unit,
+    contentFilter: ContentFilter?,
 ) {
     val c = row.contact
     Row(
@@ -249,7 +253,7 @@ private fun ConversationRow(
                     overflow = TextOverflow.Ellipsis,
                 )
             } else {
-                MessagePreviewLine(row, summaryPrivacy)
+                MessagePreviewLine(row, summaryPrivacy, contentFilter)
             }
         }
         row.timeMillis?.let { time ->
@@ -263,12 +267,12 @@ private fun ConversationRow(
 }
 
 @Composable
-private fun MessagePreviewLine(row: ConversationListViewModel.Row, summaryPrivacy: Boolean) {
+private fun MessagePreviewLine(row: ConversationListViewModel.Row, summaryPrivacy: Boolean, contentFilter: ContentFilter?) {
     val last = row.last ?: return
     val preview = if (summaryPrivacy) {
         stringResource(R.string.conversations_preview_hidden)
     } else {
-        MessagePreview.of(last, row.itemCount).asString()
+        MessagePreview.of(last, row.itemCount, contentFilter).asString()
     }
     val danger = moyuColors.statusDanger
     val unsentPrefix = row.unsentPrefixRes?.let { stringResource(it) }

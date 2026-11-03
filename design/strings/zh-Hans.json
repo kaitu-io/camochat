@@ -372,5 +372,10 @@
   "share_card_invite_pitch": "消息在手机上加密，只有你们俩看得到",
   "share_card_cd": "配对卡片，含二维码和说明",
   "scanner_pick_photo": "从相册选",
-  "scanner_photo_no_code": "这张图里没有找到{app}的二维码"
+  "scanner_photo_no_code": "这张图里没有找到{app}的二维码",
+  "thread_report": "举报",
+  "report_also_block_title": "同时拉黑 TA？",
+  "report_also_block_ok": "拉黑",
+  "filtered_cover": "可能含不良内容，点按查看",
+  "preview_filtered": "[可能含不良内容]"
 }

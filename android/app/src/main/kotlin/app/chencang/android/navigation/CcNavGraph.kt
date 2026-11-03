@@ -250,6 +250,7 @@ fun CcNavGraph(
                         onOpenThread = { username -> nav.navigate(Routes.conversationRoute(username)) },
                         onAddContact = addContact,
                         onGoToContacts = { nav.setMainTab(MainTab.Contacts) },
+                        contentFilter = locator.contentFilter,
                     )
                 },
                 contacts = { padding ->
@@ -311,6 +312,9 @@ fun CcNavGraph(
                 onOpenWizard = { wire -> nav.openWizardWithWire(wire) },
                 pasteBar = pasteBar,
                 onPasteBarPaste = onPasteBarPaste,
+                contentFilter = locator.contentFilter,
+                // Same exit as after blocking from the contact page: the conversation is hidden now.
+                onBlockedPeer = { nav.backToMainAfterContactDeleted() },
             )
         }
 
@@ -642,6 +646,7 @@ private fun conversationFactory(locator: CcServiceLocator, peerUsername: String,
                 repo = locator.chatRepository,
                 peerUsername = peerUsername,
                 contacts = locator.repository.contacts,
+                setBlocked = locator.repository::setBlocked,
                 sender = locator.mediaSender,
                 downloader = locator.mediaDownloader,
                 preparer = AndroidMediaPreparer(appContext),

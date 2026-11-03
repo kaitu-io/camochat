@@ -31,6 +31,7 @@ import app.chencang.shared.media.ResourceShareHeaders
 import app.chencang.shared.media.UniffiMediaCrypto
 import app.chencang.shared.media.UploadEngine
 import app.chencang.shared.model.ContactListSnapshot
+import app.chencang.shared.moderation.ContentFilter
 import app.chencang.shared.pairing.inband.DataStorePairingResponseStore
 import app.chencang.shared.pairing.inband.InbandPairing
 import app.chencang.shared.pairing.inband.DataStorePendingInviteStore
@@ -103,6 +104,8 @@ class CcServiceLocator private constructor(
     val incomingIntake: IncomingIntake,
     /** Signed distribution config (factory asset + cached). The Activity triggers refresh; nothing auto-fetches here. */
     val configRepository: ConfigRepository,
+    /** Local bad-word filter for incoming text (one instance; the word list is read once). */
+    val contentFilter: ContentFilter,
     private val chatDb: ChatDatabase,
     val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
 ) {
@@ -309,6 +312,7 @@ class CcServiceLocator private constructor(
                         isBlocked = repository::isBlocked,
                     ),
                     configRepository = configRepository,
+                    contentFilter = ContentFilter.fromAssets(appContext),
                     chatDb = chatDb,
                 )
                 // 昵称与头像的初值在后台读出后再发布，不在主线程构造时同步读（spec three-tab-shell §7.3）。

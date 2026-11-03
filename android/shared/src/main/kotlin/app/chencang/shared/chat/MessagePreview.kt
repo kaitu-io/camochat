@@ -2,6 +2,7 @@ package app.chencang.shared.chat
 
 import app.chencang.shared.R
 import app.chencang.shared.i18n.UiText
+import app.chencang.shared.moderation.ContentFilter
 
 /**
  * One-line text for a message where only a summary fits (conversation list, placeholder bubble,
@@ -10,8 +11,12 @@ import app.chencang.shared.i18n.UiText
  */
 object MessagePreview {
     /** [itemCount] = number of media items (only images can carry more than one). */
-    fun of(message: ChatMessage, itemCount: Int = 1): UiText =
-        if (message.kind == ChatMessage.KIND_TEXT) UiText.Raw(message.body) else ofKind(message.kind, itemCount)
+    fun of(message: ChatMessage, itemCount: Int = 1, filter: ContentFilter? = null): UiText = when {
+        message.kind != ChatMessage.KIND_TEXT -> ofKind(message.kind, itemCount)
+        filter != null && message.direction == ChatMessage.DIRECTION_IN && filter.isFlagged(message.body) ->
+            UiText.Res(R.string.preview_filtered)
+        else -> UiText.Raw(message.body)
+    }
 
     /** Preview for a non-text [kind] (`ChatMessage.KIND_*`); unknown kinds read as the update-the-app placeholder. */
     fun ofKind(kind: String, itemCount: Int = 1): UiText = when (kind) {

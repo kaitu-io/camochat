@@ -28,6 +28,7 @@ import app.chencang.shared.intake.IntakeHandler
 import app.chencang.shared.intake.IntakeKind
 import app.chencang.shared.intake.IntakeOutcome
 import app.chencang.shared.model.Contact
+import app.chencang.shared.moderation.ModerationMail
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -78,6 +79,8 @@ class ConversationViewModel(
     pollClock: () -> Long = SystemClock::uptimeMillis,
     /** 粘贴进来的加密消息在这里解密落库（测试注入测试调度器）。 */
     private val intakeDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    /** 拉黑 / 取消拉黑（按指纹）。举报之后「同时拉黑 TA」用。 */
+    private val setBlocked: suspend (fingerprintHex: String, blocked: Boolean) -> Unit = { _, _ -> },
 ) : ViewModel() {
 
     val messages: StateFlow<List<ChatMessage>> = repo.observeThread(peerUsername)
@@ -120,9 +123,9 @@ class ConversationViewModel(
         prefs.dismissThreadBanner(ThreadBanners.dismissKey(c, banner))
     }
 
-    /** 转发的候选联系人（排除当前线程）。 */
+    /** 转发的候选联系人（排除当前线程和已拉黑的人；已拉黑联系人的线程本身照常能打开）。 */
     val otherContacts: StateFlow<List<Contact>> = contacts
-        .map { list -> list.filter { it.username != peerUsername } }
+        .map { list -> list.filter { it.username != peerUsername && !it.blocked } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _draft = MutableStateFlow("")
@@ -483,6 +486,27 @@ class ConversationViewModel(
         dropQueued(messageId)
         if (_card.value?.messageId == messageId) _card.value = null
         return launchGuarded("delete", DELETE_FAILED) { repo.deleteMessage(messageId) }
+    }
+
+    /**
+     * 举报一条对方的消息：拼好给开发者的邮件草稿（文字带原文，媒体带 blob id）。没有这位联系人时返回 null。
+     * 只构造，不发送——邮件交给用户自己的邮件 App。
+     */
+    suspend fun reportMail(message: ChatMessage, appVersion: String): ModerationMail.Mail? {
+        val c = contact.value ?: return null
+        val blobIds = if (message.kind == ChatMessage.KIND_TEXT) {
+            emptyList()
+        } else {
+            repo.observeThreadMedia(peerUsername).first()
+                .filter { it.messageId == message.id }.sortedBy { it.index }.map { it.blobId }
+        }
+        return ModerationMail.report(c.displayName, c.fingerprintHex, message, blobIds, appVersion)
+    }
+
+    /** 举报后选了「同时拉黑 TA」：只打拉黑标记，不删历史与会话。 */
+    suspend fun blockPeer() {
+        val c = contact.value ?: return
+        setBlocked(c.fingerprintHex, true)
     }
 
     fun toggleVoice(row: ThreadRow) {

@@ -102,6 +102,7 @@
 "conversations_preview_no_messages" = "No messages yet — say hi";
 "conversations_preview_waiting_peer" = "Waiting for them to finish adding you";
 "conversations_tab" = "Chats";
+"filtered_cover" = "May contain inappropriate content. Tap to view";
 "intake_action_open_app" = "Open CamoChat";
 "intake_already_in_thread" = "This message is already in your chat";
 "intake_blocked" = "This message is from a blocked contact and was not shown";
@@ -261,7 +262,10 @@
 "paste_bar_not_ours" = "That's not CamoChat content";
 "paste_bar_read_failed" = "Couldn't read the clipboard. Long-press a text field to paste instead";
 "paste_bar_text" = "You just copied something";
+"preview_filtered" = "[May contain inappropriate content]";
 "process_text_label" = "Decrypt with CamoChat";
+"report_also_block_ok" = "Block";
+"report_also_block_title" = "Block them too?";
 "scanner_photo_no_code" = "No CamoChat QR code found in this image";
 "scanner_pick_photo" = "Choose from Photos";
 "settings_about" = "About";
@@ -316,6 +320,7 @@
 "thread_empty_title" = "No messages yet";
 "thread_no_share_target" = "No app to share with";
 "thread_readd_contact" = "Add again";
+"thread_report" = "Report";
 "thread_send_failed" = "Couldn't send. Try again.";
 "thread_unsupported_message" = "New message type. Update CamoChat to view it.";
 "thread_unverified_subtitle" = "Not verified · tap to verify";

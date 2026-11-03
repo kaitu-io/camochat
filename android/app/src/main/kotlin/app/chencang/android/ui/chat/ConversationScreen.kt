@@ -38,6 +38,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import app.chencang.android.BuildConfig
+import app.chencang.android.moderation.MailLauncher
+import app.chencang.shared.moderation.ContentFilter
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -115,6 +123,10 @@ fun ConversationScreen(
     /** 粘贴条（输入框上方）：与 tab 页共享同一个状态；点「粘贴」由调用方读剪贴板并分流。 */
     pasteBar: PasteBarState,
     onPasteBarPaste: () -> Unit,
+    /** 本地违禁词表（对方文字命中就盖住）。 */
+    contentFilter: ContentFilter? = null,
+    /** 举报后选了「同时拉黑 TA」且已拉黑：离开会话。 */
+    onBlockedPeer: () -> Unit = {},
 ) {
     val rows by viewModel.rows.collectAsStateWithLifecycle()
     val contact by viewModel.contact.collectAsStateWithLifecycle()
@@ -127,6 +139,8 @@ fun ConversationScreen(
     val awaitingExpired by viewModel.awaitingExpired.collectAsStateWithLifecycle()
     val playing by viewModel.voicePlayer.playing.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val reportScope = rememberCoroutineScope()
+    var askBlockAfterReport by rememberSaveable { mutableStateOf(false) }
     val density = LocalDensity.current
     val listState = rememberLazyListState()
     // 有意复用 Size.VoiceOverlay(160dp)的一半作上滑取消的判定距离(spec §3.2),不另加 token。
@@ -384,6 +398,16 @@ fun ConversationScreen(
                                 onReopen = { r -> viewModel.reopenCard(r.message.id) },
                                 onForward = { r, indices -> forwarding = ForwardRequest(r.message.id, indices) },
                                 onDelete = { r -> viewModel.delete(r.message.id) },
+                                contentFilter = contentFilter,
+                                onReport = { r ->
+                                    reportScope.launch {
+                                        // 邮件草稿交给用户自己的邮件 App；发不发由用户定。随后问要不要一并拉黑。
+                                        viewModel.reportMail(r.message, BuildConfig.VERSION_NAME)?.let { mail ->
+                                            MailLauncher.send(context, mail)
+                                            askBlockAfterReport = true
+                                        }
+                                    }
+                                },
                                 modifier = Modifier.animateItemPlacement(),
                             )
                         }
@@ -393,6 +417,25 @@ fun ConversationScreen(
             }
             ThreadBottom(pasteBar, onPasteBarPaste) { ChatComposer(viewModel, machine, recorder) }
         }
+    }
+
+    if (askBlockAfterReport) {
+        AlertDialog(
+            onDismissRequest = { askBlockAfterReport = false },
+            title = { Text(stringResource(R.string.report_also_block_title)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    askBlockAfterReport = false
+                    reportScope.launch {
+                        viewModel.blockPeer()
+                        onBlockedPeer()
+                    }
+                }) { Text(stringResource(R.string.report_also_block_ok)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { askBlockAfterReport = false }) { Text(stringResource(R.string.common_cancel)) }
+            },
+        )
     }
 
     viewingImage?.let { v ->

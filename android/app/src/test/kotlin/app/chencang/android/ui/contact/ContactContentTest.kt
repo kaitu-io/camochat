@@ -103,4 +103,16 @@ class ContactContentTest {
         compose.onNodeWithTag(ContactTestTags.UNBLOCK).performScrollTo().performClick()
         assertThat(unblocked).isEqualTo(1)
     }
+
+    @Test
+    fun `blocked contact hides the message action`() {
+        show(null, blocked = true)
+        compose.onNodeWithTag(ContactTestTags.MESSAGE).assertDoesNotExist()
+    }
+
+    @Test
+    fun `unblocked contact shows the message action`() {
+        show(null)
+        compose.onNodeWithTag(ContactTestTags.MESSAGE).assertExists()
+    }
 }

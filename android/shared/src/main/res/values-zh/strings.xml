@@ -111,6 +111,7 @@
     <string name="conversations_preview_no_messages">还没有消息，发一句打个招呼</string>
     <string name="conversations_preview_waiting_peer">等对方完成添加</string>
     <string name="conversations_tab">会话</string>
+    <string name="filtered_cover">可能含不良内容，点按查看</string>
     <string name="infoplist_action_display_name">陈仓解密</string>
     <string name="infoplist_app_display_name">陈仓</string>
     <string name="infoplist_camera_usage">扫描配对二维码、拍摄照片和视频需要使用相机。</string>
@@ -287,7 +288,10 @@
     <string name="paste_bar_not_ours">剪贴板里不是陈仓的内容</string>
     <string name="paste_bar_read_failed">读不到剪贴板，请到输入框长按粘贴</string>
     <string name="paste_bar_text">你刚复制了内容</string>
+    <string name="preview_filtered">[可能含不良内容]</string>
     <string name="process_text_label">陈仓解密</string>
+    <string name="report_also_block_ok">拉黑</string>
+    <string name="report_also_block_title">同时拉黑 TA？</string>
     <string name="scanner_photo_no_code">这张图里没有找到陈仓的二维码</string>
     <string name="scanner_pick_photo">从相册选</string>
     <string name="settings_about">关于</string>
@@ -342,6 +346,7 @@
     <string name="thread_empty_title">还没有消息</string>
     <string name="thread_no_share_target">没有可分享的 App</string>
     <string name="thread_readd_contact">去重新添加</string>
+    <string name="thread_report">举报</string>
     <string name="thread_send_failed">发送失败，请重试</string>
     <string name="thread_unsupported_message">这是一条新类型消息，请升级陈仓</string>
     <string name="thread_unverified_subtitle">未核对 · 点这里核对</string>

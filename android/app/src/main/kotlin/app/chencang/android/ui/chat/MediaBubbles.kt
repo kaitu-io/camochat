@@ -34,6 +34,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import app.chencang.shared.moderation.ContentFilter
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,7 +77,7 @@ internal fun bubbleShape(isOut: Boolean) = if (isOut) {
 /**
  * 线程里的一行:文字/占位气泡,或一个媒体条目的气泡。长按菜单:
  * - 自己的文字:分享 / 复制加密消息 / 复制原文 / 删除
- * - 对方的文字:复制(明文) / 删除
+ * - 对方的文字:复制(明文) / 举报 / 删除(对方的媒体也有「举报」)
  * - 媒体(两个方向):复制加密消息(有分享文本时) / 转发 / 转发全部 N 张 / 删除
  * - 升级占位:复制加密消息 / 删除
  * 失败显示红 `!`(点击重试 / 重新下载);对方未听的语音带红点。发出的状态行「还没发」「已复制」可点,把卡片叫回来。
@@ -108,11 +110,19 @@ internal fun MessageRow(
     onForward: (ThreadRow, List<Int>?) -> Unit,
     onDelete: (ThreadRow) -> Unit,
     modifier: Modifier = Modifier,
+    /** 本地违禁词表：对方的文字命中就先盖住，点按才显示（自己发的不盖）。 */
+    contentFilter: ContentFilter? = null,
+    /** 对方消息长按「举报」。 */
+    onReport: (ThreadRow) -> Unit = {},
 ) {
     val msg = row.message
     val item = row.item
     val isOut = msg.direction == ChatMessage.DIRECTION_OUT
     var menuOpen by remember { mutableStateOf(false) }
+    // 「已展开」只活在界面状态里（旋转保留），不落库：再进会话仍是盖住的。
+    var revealed by rememberSaveable(msg.id) { mutableStateOf(false) }
+    val covered = !isOut && item == null && msg.kind == ChatMessage.KIND_TEXT && !revealed &&
+        contentFilter?.isFlagged(msg.body) == true
     // 发出的：整条消息失败（对方还看不到 / 永久失败 / 加密失败）才出红「!」，只在这条消息的最后一行（row.outStatus），
     // 与状态行同一判定（MediaLayout.outStatusLine：只有加密重跑时的「发送失败」不出）。
     val showRetry = item != null && if (isOut) {
@@ -134,13 +144,15 @@ internal fun MessageRow(
                 Box(
                     modifier = Modifier
                         .combinedClickable(
-                            onClick = { if (item != null) onTapMedia(row) },
+                            onClick = {
+                                if (item != null) onTapMedia(row) else if (covered) revealed = true
+                            },
                             onLongClick = { menuOpen = true },
                         )
                         .testTag(tag),
                 ) {
                     when {
-                        item == null -> TextBubble(msg, isOut)
+                        item == null -> TextBubble(msg, isOut, covered)
                         item.kind == MediaConstants.KIND_VOICE ->
                             VoiceBubble(item, isOut, playing, progress, awaitingWindowExpired)
                         item.kind == MediaConstants.KIND_IMAGE -> ImageBubble(item, progress, awaitingWindowExpired)
@@ -189,6 +201,12 @@ internal fun MessageRow(
                             })
                         }
                     }
+                    if (!isOut) {
+                        DropdownMenuItem(text = { Text(stringResource(R.string.thread_report)) }, onClick = {
+                            menuOpen = false
+                            onReport(row)
+                        })
+                    }
                     DropdownMenuItem(text = { Text(stringResource(R.string.common_delete), color = moyuColors.statusDanger) }, onClick = {
                         menuOpen = false
                         onDelete(row)
@@ -207,7 +225,7 @@ internal fun MessageRow(
 }
 
 @Composable
-private fun TextBubble(msg: ChatMessage, isOut: Boolean) {
+private fun TextBubble(msg: ChatMessage, isOut: Boolean, covered: Boolean = false) {
     val unsupported = msg.kind == ChatMessage.KIND_UNSUPPORTED
     Box(
         modifier = Modifier
@@ -217,11 +235,15 @@ private fun TextBubble(msg: ChatMessage, isOut: Boolean) {
             .padding(horizontal = Moyu.Space.M, vertical = Moyu.Space.S),
     ) {
         Text(
-            if (unsupported) MessagePreview.of(msg).asString() else msg.body,
+            when {
+                covered -> stringResource(R.string.filtered_cover)
+                unsupported -> MessagePreview.of(msg).asString()
+                else -> msg.body
+            },
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontStyle = if (unsupported) FontStyle.Italic else FontStyle.Normal,
+                fontStyle = if (unsupported || covered) FontStyle.Italic else FontStyle.Normal,
             ),
-            color = if (unsupported) moyuColors.textSecondary else moyuColors.textPrimary,
+            color = if (unsupported || covered) moyuColors.textSecondary else moyuColors.textPrimary,
         )
     }
 }

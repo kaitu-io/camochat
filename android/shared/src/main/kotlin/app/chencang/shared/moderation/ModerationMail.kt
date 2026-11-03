@@ -27,4 +27,30 @@ object ModerationMail {
                 "App: CamoChat $appVersion Android",
             ).joinToString("\n", postfix = "\n"),
         )
+
+    /**
+     * Report of one incoming message. Text messages carry their text; media messages carry the
+     * blob ids so the developer can have the files removed from the relay.
+     */
+    fun report(
+        displayName: String,
+        fingerprintHex: String,
+        message: app.chencang.shared.chat.ChatMessage,
+        blobIds: List<String>,
+        appVersion: String,
+    ): Mail {
+        val lines = mutableListOf(
+            "Reported contact: $displayName",
+            "Fingerprint: ${fingerprintHex.take(FINGERPRINT_CHARS)}",
+            "Message time (UTC): ${Instant.ofEpochMilli(message.timestamp).truncatedTo(ChronoUnit.SECONDS)}",
+            "Type: ${message.kind}",
+        )
+        if (message.kind == app.chencang.shared.chat.ChatMessage.KIND_TEXT) {
+            lines += "Content:\n${message.body}"
+        } else if (blobIds.isNotEmpty()) {
+            lines += "Media IDs: ${blobIds.joinToString(",")}"
+        }
+        lines += "App: CamoChat $appVersion Android"
+        return Mail(to = MODERATION_EMAIL, subject = "CamoChat report / 举报", body = lines.joinToString("\n", postfix = "\n"))
+    }
 }

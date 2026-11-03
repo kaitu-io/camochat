@@ -377,5 +377,10 @@
   "share_card_invite_pitch": "Encrypted on your phone — only the two of you can read it",
   "share_card_cd": "Pairing card with a QR code and instructions",
   "scanner_pick_photo": "Choose from Photos",
-  "scanner_photo_no_code": "No {app} QR code found in this image"
+  "scanner_photo_no_code": "No {app} QR code found in this image",
+  "thread_report": "Report",
+  "report_also_block_title": "Block them too?",
+  "report_also_block_ok": "Block",
+  "filtered_cover": "May contain inappropriate content. Tap to view",
+  "preview_filtered": "[May contain inappropriate content]"
 }

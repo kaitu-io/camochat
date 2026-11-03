@@ -422,6 +422,10 @@ public enum L10n {
         NSLocalizedString("conversations_tab", bundle: .module, comment: "")
     }
 
+    public static var filteredCover: String {
+        NSLocalizedString("filtered_cover", bundle: .module, comment: "")
+    }
+
     public static var intakeActionOpenApp: String {
         NSLocalizedString("intake_action_open_app", bundle: .module, comment: "")
     }
@@ -1074,8 +1078,20 @@ public enum L10n {
         NSLocalizedString("paste_bar_text", bundle: .module, comment: "")
     }
 
+    public static var previewFiltered: String {
+        NSLocalizedString("preview_filtered", bundle: .module, comment: "")
+    }
+
     public static var processTextLabel: String {
         NSLocalizedString("process_text_label", bundle: .module, comment: "")
+    }
+
+    public static var reportAlsoBlockOk: String {
+        NSLocalizedString("report_also_block_ok", bundle: .module, comment: "")
+    }
+
+    public static var reportAlsoBlockTitle: String {
+        NSLocalizedString("report_also_block_title", bundle: .module, comment: "")
     }
 
     public static var scannerPhotoNoCode: String {
@@ -1292,6 +1308,10 @@ public enum L10n {
 
     public static var threadReaddContact: String {
         NSLocalizedString("thread_readd_contact", bundle: .module, comment: "")
+    }
+
+    public static var threadReport: String {
+        NSLocalizedString("thread_report", bundle: .module, comment: "")
     }
 
     public static var threadSendFailed: String {

@@ -173,8 +173,11 @@ internal fun ContactContent(
             }
 
             Spacer(Modifier.height(Moyu.Space.L))
-            Button(onClick = onMessage, modifier = Modifier.fillMaxWidth().testTag(ContactTestTags.MESSAGE)) {
-                Text(stringResource(R.string.contacts_message))
+            // A blocked contact's conversation is hidden: no way to start one from here until unblocked.
+            if (contact?.blocked != true) {
+                Button(onClick = onMessage, modifier = Modifier.fillMaxWidth().testTag(ContactTestTags.MESSAGE)) {
+                    Text(stringResource(R.string.contacts_message))
+                }
             }
             resendableResponse?.let { wire ->
                 TextButton(
