@@ -1,5 +1,10 @@
 import Foundation
 
+public enum ChatServiceError: Error, Equatable {
+    /// 来自已拉黑的联系人:解密照常(会话状态已推进并保存),消息不入库、不显示。
+    case blockedSender(peerId: String)
+}
+
 /// iOS 版 ChatRepository:封缄发送 / 收 wire 入库 / 收件箱明文入库。
 @MainActor
 public final class ChatService {
@@ -11,6 +16,7 @@ public final class ChatService {
     private let store: ChatStore
     private let crypto: ThreadCrypto
     private let contactIds: () -> [String]
+    private let isBlocked: (String) -> Bool
     private let now: () -> Date
     private let newId: () -> String
     private let isWire: (String) -> Bool
@@ -20,6 +26,7 @@ public final class ChatService {
         store: ChatStore,
         crypto: ThreadCrypto,
         contactIds: @escaping () -> [String],
+        isBlocked: @escaping (String) -> Bool = { _ in false },
         now: @escaping () -> Date = Date.init,
         newId: @escaping () -> String = { UUID().uuidString },
         isWire: @escaping (String) -> Bool = WireLocator.decodes,
@@ -28,6 +35,7 @@ public final class ChatService {
         self.store = store
         self.crypto = crypto
         self.contactIds = contactIds
+        self.isBlocked = isBlocked
         self.now = now
         self.newId = newId
         self.isWire = isWire
@@ -94,8 +102,10 @@ public final class ChatService {
     /// 收件箱 drain 用:扩展进程已解好的内容直接入库(不再碰棘轮)。文字、媒体引用、占位都走这里。
     /// 按 id 幂等:这条 id 已经落库过(上次回前台成功过,只是收件箱清理失败又重投),
     /// 直接返回已有记录,不重复 append——调用方(`handleBecameActive`)靠这个安全重放。
+    /// 发件人已拉黑 → 抛 ``ChatServiceError/blockedSender(peerId:)``,不落库(这是唯一的入库口)。
     @discardableResult
     public func ingest(_ entry: InboxEntry) throws -> ChatMessage {
+        if isBlocked(entry.peerId) { throw ChatServiceError.blockedSender(peerId: entry.peerId) }
         if let existing = store.message(id: entry.id, peerId: entry.peerId) {
             return existing
         }

@@ -174,3 +174,73 @@ final class ContactsStoreTests: XCTestCase {
         XCTAssertEqual(try sync.readContacts().first?.emoji, realEmoji)
     }
 }
+
+// MARK: - 拉黑
+
+extension ContactsStoreTests {
+    func testLegacyJSONWithoutIsBlockedDecodesAsNotBlocked() throws {
+        let legacy = #"[{"id":"u1","displayName":"Alice","isVerified":true}]"#
+        fakeDefaults.set(Data(legacy.utf8), forKey: "cc.contacts.v1")
+        let contacts = try sync.readContacts()
+        XCTAssertEqual(contacts.count, 1)
+        XCTAssertNil(contacts[0].isBlocked)
+        XCTAssertFalse(contacts[0].blocked)
+        let reloaded = ContactsStore(sync: sync)
+        XCTAssertEqual(reloaded.visibleContacts.map(\.id), ["u1"])
+        XCTAssertTrue(reloaded.blockedContacts.isEmpty)
+    }
+
+    func testSetBlockedSplitsVisibleAndBlockedAndPersists() async throws {
+        try await store.add(AppGroupContact(id: "u1", displayName: "Alice", isVerified: true))
+        try await store.add(AppGroupContact(id: "u2", displayName: "Bob", isVerified: false))
+
+        try await store.setBlocked(contactId: "u1", true)
+
+        XCTAssertEqual(store.visibleContacts.map(\.id), ["u2"])
+        XCTAssertEqual(store.blockedContacts.map(\.id), ["u1"])
+        XCTAssertTrue(store.isBlocked("u1"))
+        XCTAssertFalse(store.isBlocked("u2"))
+        XCTAssertFalse(store.isBlocked("nobody"))
+        XCTAssertEqual(store.contacts.count, 2, "blocking never deletes the contact")
+        XCTAssertEqual(try sync.readContacts().first { $0.id == "u1" }?.blocked, true)
+        // 其余字段原样保留
+        XCTAssertEqual(store.contacts.first { $0.id == "u1" }?.isVerified, true)
+
+        try await store.setBlocked(contactId: "u1", false)
+        XCTAssertEqual(Set(store.visibleContacts.map(\.id)), ["u1", "u2"])
+        XCTAssertTrue(store.blockedContacts.isEmpty)
+        XCTAssertFalse(store.isBlocked("u1"))
+    }
+
+    func testAddSameIdKeepsBlock() async throws {
+        try await store.add(AppGroupContact(id: "u1", displayName: "Alice", isVerified: true))
+        try await store.setBlocked(contactId: "u1", true)
+
+        try await store.add(AppGroupContact(id: "u1", displayName: "Alice again", isVerified: false))
+
+        XCTAssertTrue(store.isBlocked("u1"))
+        XCTAssertEqual(store.contacts.first?.displayName, "Alice again")
+        XCTAssertEqual(try sync.readContacts().first?.blocked, true)
+    }
+
+    func testRenameAndMarkVerifiedKeepBlock() async throws {
+        try await store.add(AppGroupContact(id: "u1", displayName: "Alice", isVerified: false))
+        try await store.setBlocked(contactId: "u1", true)
+
+        try await store.rename(contactId: "u1", to: "A")
+        try await store.markVerified(contactId: "u1")
+
+        XCTAssertTrue(store.isBlocked("u1"))
+        XCTAssertEqual(try sync.readContacts().first?.blocked, true)
+    }
+
+    func testRepairingUpsertKeepsBlock() async throws {
+        try await store.add(AppGroupContact(id: "fp1", displayName: "Alice", isVerified: true))
+        try await store.setBlocked(contactId: "fp1", true)
+
+        try await AppGroupContactPersister(sync: sync).upsert(PairedContact(
+            fingerprintHex: "fp1", displayName: "Alice", emoji: [], deviceId: "fp1", pairedAtMillis: 1, acceptedInviteDigest: nil))
+
+        XCTAssertEqual(try sync.readContacts().first?.blocked, true)
+    }
+}

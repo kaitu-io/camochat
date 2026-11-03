@@ -47,6 +47,8 @@ public final class IntakeRouter {
                     return .failed(hasAwaitingInvites() ? .pendingInvite : .cannotOpen)
                 }
                 return .openThread(peerId: message.peerId, messageId: message.id)
+            } catch ChatServiceError.blockedSender {
+                return .failed(.blocked)
             } catch {
                 return .failed(.saveFailed)
             }

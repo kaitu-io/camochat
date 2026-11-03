@@ -103,6 +103,10 @@ struct MeView: View {
                 settingsRow(title: L10n.settingsHideSummary, subtitle: L10n.settingsHideSummaryHint)
             }
             .tint(Moyu.Palette.accentPrimary)
+            NavigationLink(value: AppRoute.blockedContacts) {
+                settingsRow(title: L10n.settingsBlockedContacts)
+            }
+            .accessibilityIdentifier("me-blocked-contacts")
         } header: {
             sectionHeader(L10n.settingsPrivacy)
         }

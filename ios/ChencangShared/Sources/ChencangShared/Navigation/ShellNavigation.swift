@@ -7,6 +7,7 @@ public enum AppTab: Hashable, Sendable { case chats, contacts, me }
 public enum AppRoute: Hashable, Sendable {
     case thread(String)     // peerId
     case contact(String)    // contactId
+    case blockedContacts    // 我 → 已拉黑的联系人
 }
 
 /// 「当前 tab + 单条栈」的导航快照(spec §4.1:单 NavigationStack + tab 根)。
@@ -37,6 +38,11 @@ public enum ShellNav {
     /// 删联系人:清栈,**不动 tab**——从哪个 tab 进来就回哪个 tab。
     public static func contactDeleted(from: ShellState) -> ShellState {
         ShellState(tab: from.tab, path: [])
+    }
+
+    /// 拉黑联系人:同删联系人——清栈回主界面,不动 tab。
+    public static func contactBlocked(from: ShellState) -> ShellState {
+        contactDeleted(from: from)
     }
 
     /// 删账号成功:清栈并落在会话 tab(再次建号后不应落在「我」)。

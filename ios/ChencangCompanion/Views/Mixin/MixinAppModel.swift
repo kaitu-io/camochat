@@ -56,6 +56,10 @@ final class MixinAppModel: ObservableObject {
     @Published var highlightMessageId: String?
     /// 来件处理失败(草稿里贴进来的加密消息解不开等):RootView 据此弹一次根级提示。
     @Published var intakeFailure: IntakeFailure?
+    /// 刚拉黑了一个人:根上弹「是否发邮件告知开发者?」,点「发邮件」用这份草稿。
+    @Published var blockNoticeMail: ModerationMail.Mail?
+    /// 没有邮件 App:草稿已复制,提示发到哪个地址。
+    @Published var mailCopiedNotice = false
 
     /// Onboarding 闸门(2026-08 controller 裁决):RootView 曾经拿
     /// `identityStore.identity == nil` 直接判定,但 identity 在幕 1(品牌幕)
@@ -130,6 +134,8 @@ final class MixinAppModel: ObservableObject {
             store: store,
             crypto: SessionThreadCrypto(),
             contactIds: { ContactsStore.shared.contacts.map(\.id) },
+            // 已拉黑的人:解密照常(会话状态推进),内容不入库。
+            isBlocked: { ContactsStore.shared.isBlocked($0) },
             // 收到对方一条能解开的消息 = 对方已完成配对:清掉为他留着的可重发回应暗号(联系人上的邀请摘要不动)。
             // 走编排层的 `forgetPeer`(闸内串行、没有记录时不写盘),不直接动 store 绕过闸门。
             onIncomingStored: { peerId in
@@ -193,6 +199,19 @@ final class MixinAppModel: ObservableObject {
     private func releaseHeldWizard() {
         guard termsAccepted, let entry = onboardingGate.release() else { return }
         wizard = entry
+    }
+
+    /// 拉黑确认后:清栈回主界面,等返回动画过去再问要不要告知开发者(同一时刻叠模态 SwiftUI 会丢掉后一个)。
+    func didBlock(_ mail: ModerationMail.Mail) {
+        apply(ShellNav.contactBlocked(from: ShellState(tab: selectedTab, path: path)))
+        DispatchQueue.main.asyncAfter(deadline: .now() + Moyu.Motion.standard / 1000) { [weak self] in
+            self?.blockNoticeMail = mail
+        }
+    }
+
+    /// 把草稿交给用户的邮件 App;没有邮件 App 时复制全文并提示。
+    func sendMail(_ mail: ModerationMail.Mail, openURL: OpenURLAction) {
+        MailLauncher.send(mail, openURL: openURL) { [weak self] in self?.mailCopiedNotice = true }
     }
 
     /// 把 `ShellNav` 算出的导航快照落到界面状态。
@@ -264,6 +283,9 @@ final class MixinAppModel: ObservableObject {
             for entry in entries {
                 do {
                     _ = try chatService.ingest(entry)
+                    handledIds.insert(entry.id)
+                } catch ChatServiceError.blockedSender {
+                    // 扩展写进来之后才拉黑的人:这条丢掉(不显示),从收件箱删除,继续下一条。
                     handledIds.insert(entry.id)
                 } catch {
                     NSLog("CCCHAT 收件箱条目落库失败,留待下次回前台重试:\(entry.id)")

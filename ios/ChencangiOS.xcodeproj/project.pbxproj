@@ -35,6 +35,7 @@
 		8859CECDB8EF76E105853A34 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D24CF0A5C6E863B58310AD21 /* MainTabView.swift */; };
 		886BCF7CB4636258C8987C00 /* ContactView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C495877703C102F7EB7896C /* ContactView.swift */; };
 		8D65D68DD337FBBA157CFD23 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 7B58887676A37286FA588C65 /* InfoPlist.strings */; };
+		914A88348D89B9786CE6078B /* MailLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2757E7CF4DEECF2C5B203D5 /* MailLauncher.swift */; };
 		92817C8C78543C72518879F8 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91130AEE6CBBDC2648D55AE6 /* QRScannerView.swift */; };
 		963B0AA6DAC1836D50F4C99F /* ImageViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A570122CC53F62F0C4DF13CA /* ImageViewer.swift */; };
 		9B1FF66EDD756B6CB7089AAF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F314A890DB848FC7712DBFBE /* AppDelegate.swift */; };
@@ -51,6 +52,7 @@
 		B8CCC9EEB2A31D64E8AD262D /* MixinAppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53CBF934C04E3AD6ABD0D4FF /* MixinAppModel.swift */; };
 		BD1CAA44F7E7A7AACD4845C4 /* ChencangShared in Frameworks */ = {isa = PBXBuildFile; productRef = 35D414593A1993C6F197CEC1 /* ChencangShared */; };
 		C09D97928AF29167663A5373 /* UATPolishTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D7920E966A81334F08162AE /* UATPolishTests.swift */; };
+		C0D979AAB927DED8F6CB674C /* BlockedContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35310175E929E5D3E73BB79D /* BlockedContactsView.swift */; };
 		C137393A62E6E6887CD3B802 /* ChencangShared in Frameworks */ = {isa = PBXBuildFile; productRef = 1CD11AEAC03D5E02AA686221 /* ChencangShared */; };
 		C47CC8C036805B6931546D7C /* ChencangAction.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A60F10E63BDE75B03D7DF1F3 /* ChencangAction.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		C6168771F67C246394EC87E1 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 0359AC69060C98214F1DD860 /* InfoPlist.strings */; };
@@ -111,6 +113,7 @@
 		2647A7FA9BB1034A7D461773 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		2D7920E966A81334F08162AE /* UATPolishTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UATPolishTests.swift; sourceTree = "<group>"; };
 		342441F4CBB7BC981DA7907E /* UATMediaSeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UATMediaSeed.swift; sourceTree = "<group>"; };
+		35310175E929E5D3E73BB79D /* BlockedContactsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockedContactsView.swift; sourceTree = "<group>"; };
 		3A268C298D014AD3E83D283E /* UATDriveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UATDriveTests.swift; sourceTree = "<group>"; };
 		433451E1D94AB45239702DF7 /* UATReceiveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UATReceiveTests.swift; sourceTree = "<group>"; };
 		53CBF934C04E3AD6ABD0D4FF /* MixinAppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixinAppModel.swift; sourceTree = "<group>"; };
@@ -148,6 +151,7 @@
 		C9E4CF0261984D7F52EDF9FE /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		CCB2565EC68E742F52752C03 /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		D24CF0A5C6E863B58310AD21 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		D2757E7CF4DEECF2C5B203D5 /* MailLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailLauncher.swift; sourceTree = "<group>"; };
 		D9197F049FA37918DA7E53D8 /* ConversationListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListView.swift; sourceTree = "<group>"; };
 		D9DA458E66F8EDBF380D3336 /* UATSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UATSupport.swift; sourceTree = "<group>"; };
 		DDAB3E233AE0B1BC0297EBE4 /* ConversationThreadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationThreadView.swift; sourceTree = "<group>"; };
@@ -297,10 +301,12 @@
 				403766F773DCC076B2E2B03E /* Media */,
 				CCB2565EC68E742F52752C03 /* ActivityView.swift */,
 				80619B6BE149A5FF31442D5E /* AvatarEditorSheet.swift */,
+				35310175E929E5D3E73BB79D /* BlockedContactsView.swift */,
 				E36906BE2587DFEE86FDB0E2 /* ContactListView.swift */,
 				6C495877703C102F7EB7896C /* ContactView.swift */,
 				D9197F049FA37918DA7E53D8 /* ConversationListView.swift */,
 				DDAB3E233AE0B1BC0297EBE4 /* ConversationThreadView.swift */,
+				D2757E7CF4DEECF2C5B203D5 /* MailLauncher.swift */,
 				D24CF0A5C6E863B58310AD21 /* MainTabView.swift */,
 				047B0E31703B6BC5F57744F7 /* MarkedTextField.swift */,
 				F1C130738EEEC5EEF09AAD87 /* MeView.swift */,
@@ -522,6 +528,7 @@
 				34224BA52F2CCE8FA3DCEC23 /* AppPasteboard.swift in Sources */,
 				9E36168CAA74855592ED37B8 /* AudioSessionQueue.swift in Sources */,
 				E2AF3A093909F415B8580A73 /* AvatarEditorSheet.swift in Sources */,
+				C0D979AAB927DED8F6CB674C /* BlockedContactsView.swift in Sources */,
 				24503A39CABAB1672C6DE71C /* CameraPicker.swift in Sources */,
 				73D1C38EF285DA3E93D9E7D9 /* ChencangCompanionApp.swift in Sources */,
 				A6DEF9AF7DB9055FF3CBB744 /* ContactListView.swift in Sources */,
@@ -532,6 +539,7 @@
 				0E41F0BB2BD4F78E66A077F4 /* ForwardPickerSheet.swift in Sources */,
 				AC858103657F65A39AA9D106 /* HoldToTalkBar.swift in Sources */,
 				963B0AA6DAC1836D50F4C99F /* ImageViewer.swift in Sources */,
+				914A88348D89B9786CE6078B /* MailLauncher.swift in Sources */,
 				8859CECDB8EF76E105853A34 /* MainTabView.swift in Sources */,
 				4374434BE916C91837D49D82 /* MarkedTextField.swift in Sources */,
 				03A93692AD69C65E3299BB2C /* MeView.swift in Sources */,

@@ -49,6 +49,8 @@ public struct AppGroupContactPersister: PairedContactPersisting {
     @MainActor
     public func upsert(_ contact: PairedContact) async throws {
         var all = (try? sync.readContacts()) ?? []
+        // 重新配对已拉黑的人:拉黑标记沿用,不因重新配对解除。
+        let keepBlock = all.contains { $0.id == contact.fingerprintHex && $0.blocked }
         all.removeAll { $0.id == contact.fingerprintHex }
         all.append(
             AppGroupContact(
@@ -58,7 +60,8 @@ public struct AppGroupContactPersister: PairedContactPersisting {
                 deviceId: contact.deviceId,
                 emoji: contact.emoji,
                 acceptedInviteDigest: contact.acceptedInviteDigest,
-                pairedAt: contact.pairedAt
+                pairedAt: contact.pairedAt,
+                isBlocked: keepBlock ? true : nil
             )
         )
         try sync.writeContacts(all)

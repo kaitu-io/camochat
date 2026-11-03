@@ -385,3 +385,25 @@ final class PendingSectionTests: XCTestCase {
         XCTAssertNil(items)
     }
 }
+
+// MARK: - 拉黑
+
+extension TabListViewModelsTests {
+    func testBlockingHidesContactFromBothTabsAndUnblockRestores() async throws {
+        let e = try env()
+        try await e.contacts.add(AppGroupContact(id: "aa", displayName: "阿青", isVerified: false))
+        try await e.contacts.add(AppGroupContact(id: "bb", displayName: "阿白", isVerified: false))
+        try e.chat.append(ChatMessage(id: "m1", peerId: "aa", direction: .incoming, body: "hi", timestamp: Date(), status: .received))
+        let conv = ConversationListViewModel(contactsStore: e.contacts, chatStore: e.chat, inviteStore: e.invites, responseStore: e.responses)
+        let list = ContactListViewModel(contactsStore: e.contacts, inviteStore: e.invites, responseStore: e.responses)
+
+        try await e.contacts.setBlocked(contactId: "aa", true)
+        XCTAssertEqual(conv.rows.map(\.id), ["bb"])
+        XCTAssertEqual(list.rows.map(\.id), ["bb"])
+
+        try await e.contacts.setBlocked(contactId: "aa", false)
+        XCTAssertEqual(Set(conv.rows.map(\.id)), ["aa", "bb"])
+        XCTAssertNotNil(conv.rows.first { $0.id == "aa" }?.last, "history kept")
+        XCTAssertEqual(Set(list.rows.map(\.id)), ["aa", "bb"])
+    }
+}

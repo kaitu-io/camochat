@@ -23,10 +23,12 @@ open class ContactsStore: ObservableObject {
         if let fresh = try? sync.readContacts(), fresh != contacts { contacts = fresh }
     }
 
+    /// 同 id 已存在且被拉黑时,新记录沿用拉黑标记(重新配对不会解除拉黑)。
     public func add(_ contact: AppGroupContact) async throws {
         reload()
+        let keepBlock = contacts.contains { $0.id == contact.id && $0.blocked }
         var next = contacts.filter { $0.id != contact.id }
-        next.append(contact)
+        next.append(keepBlock ? contact.withBlocked(true) : contact)
         try sync.writeContacts(next)
         self.contacts = next
     }
@@ -50,7 +52,8 @@ open class ContactsStore: ObservableObject {
                     deviceId: c.deviceId,
                     emoji: c.emoji,
                     acceptedInviteDigest: c.acceptedInviteDigest,
-                    pairedAt: c.pairedAt
+                    pairedAt: c.pairedAt,
+                    isBlocked: c.isBlocked
                 )
                 : c
         }
@@ -91,11 +94,31 @@ open class ContactsStore: ObservableObject {
                     deviceId: c.deviceId,
                     emoji: c.emoji,
                     acceptedInviteDigest: c.acceptedInviteDigest,
-                    pairedAt: c.pairedAt
+                    pairedAt: c.pairedAt,
+                    isBlocked: c.isBlocked
                 )
                 : c
         }
         try sync.writeContacts(contacts)
+    }
+
+    /// 没拉黑的联系人:会话 tab、联系人 tab、转发选人用这一份。
+    public var visibleContacts: [AppGroupContact] { contacts.filter { !$0.blocked } }
+
+    /// 已拉黑的联系人(「我 → 已拉黑的联系人」)。
+    public var blockedContacts: [AppGroupContact] { contacts.filter(\.blocked) }
+
+    public func isBlocked(_ id: String) -> Bool {
+        contacts.contains { $0.id == id && $0.blocked }
+    }
+
+    /// 拉黑 / 解除拉黑。只改标记:历史消息、会话状态都不动,解除后对话原样回来。没有这个 id 时什么也不做。
+    public func setBlocked(contactId: String, _ blocked: Bool) async throws {
+        reload()
+        guard contacts.contains(where: { $0.id == contactId }) else { return }
+        let next = contacts.map { $0.id == contactId ? $0.withBlocked(blocked) : $0 }
+        try sync.writeContacts(next)
+        contacts = next
     }
 
     /// Resolve a peer's synthetic device id (= fingerprint, set by in-band

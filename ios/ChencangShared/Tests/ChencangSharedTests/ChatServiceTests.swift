@@ -232,3 +232,42 @@ final class ChatServiceTests: XCTestCase {
         XCTAssertEqual(stored, ["alice"])
     }
 }
+
+// MARK: - 拉黑
+
+extension ChatServiceTests {
+    private func blockingService(blocked: Set<String>) -> ChatService {
+        ChatService(
+            store: store,
+            crypto: EchoThreadCrypto(),
+            contactIds: { ["alice", "bob"] },
+            isBlocked: { blocked.contains($0) },
+            now: { Date(timeIntervalSince1970: 42) },
+            newId: { UUID().uuidString },
+            isWire: { $0.hasPrefix("🔒FAKE") }
+        )
+    }
+
+    func testIngestFromBlockedPeerThrowsAndStoresNothing() throws {
+        let svc = blockingService(blocked: ["alice"])
+        XCTAssertThrowsError(try svc.ingest(InboxEntry(id: "e1", peerId: "alice", body: "hi", timestamp: Date()))) { error in
+            XCTAssertEqual(error as? ChatServiceError, .blockedSender(peerId: "alice"))
+        }
+        XCTAssertTrue(store.messages(for: "alice").isEmpty)
+        XCTAssertTrue(store.latestPerPeer().isEmpty)
+    }
+
+    func testReceiveWireFromBlockedPeerThrowsAndStoresNothing() async throws {
+        let svc = blockingService(blocked: ["alice"])
+        do {
+            _ = try await svc.receiveWireText("🔒FAKE:alice:hi")
+            XCTFail("expected blockedSender")
+        } catch {
+            XCTAssertEqual(error as? ChatServiceError, .blockedSender(peerId: "alice"))
+        }
+        XCTAssertTrue(store.messages(for: "alice").isEmpty)
+        // 未拉黑的人照常入库
+        let msg = try await svc.receiveWireText("🔒FAKE:bob:yo")
+        XCTAssertEqual(msg?.peerId, "bob")
+    }
+}

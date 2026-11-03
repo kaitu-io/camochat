@@ -64,6 +64,9 @@ public class ActionViewController: UIViewController {
             present(state: .pairingCode(kind, wire: wire))
         case let .failed(failure):
             present(state: .failed(failure))
+        case .blocked:
+            // 已拉黑的人:会话状态已保存,内容不显示、不进收件箱。
+            present(state: .failed(.blocked))
         }
     }
 

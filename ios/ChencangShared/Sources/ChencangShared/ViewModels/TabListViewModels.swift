@@ -37,8 +37,10 @@ public final class ConversationListViewModel: ObservableObject {
         // 第五个源:读不了的会话集合。读回空会话时 `threads` 不变,只有它在变。
         Publishers.CombineLatest(sources, chatStore.$unreadablePeers)
             .sink { [weak self] sources, unreadable in
-                let (contacts, threads, invites, responses) = sources
+                let (allContacts, threads, invites, responses) = sources
                 guard let self else { return }
+                // 已拉黑的人不出行、不算「有联系人」,他的未发回应也不进「配对中」。
+                let contacts = allContacts.filter { !$0.blocked }
                 let ids = Set(contacts.map(\.id))
                 // 与联系人 tab 同一排除口径:回应还没发出去的接受方只在「配对中」。
                 let rows = conversationRows(
@@ -183,7 +185,8 @@ public final class ContactListViewModel: ObservableObject {
         Publishers.CombineLatest3(contactsStore.$contacts, inviteStore.$records, responseStore.$records)
             .sink { [weak self] contacts, invites, responses in
                 guard let self else { return }
-                self.latestContacts = contacts
+                // 已拉黑的人不出行,他的未发回应也不进「配对中」。
+                self.latestContacts = contacts.filter { !$0.blocked }
                 self.latestInvites = invites
                 self.latestResponses = responses
                 self.recompute()

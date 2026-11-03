@@ -29,10 +29,15 @@ public struct AppGroupContact: Codable, Equatable, Identifiable, Hashable, Senda
     /// 配对完成的时间;会话 tab 里还没有消息的联系人按它排序、显示时间。
     /// 老数据缺此键解为 nil(排在最旧、不显示时间),不做迁移;改名、对印重建记录时必须原样带上。
     public let pairedAt: Date?
+    /// 已拉黑:会话、联系人 tab 与转发选人里都不出现,收到的消息不显示。老数据缺此键解为 nil(= 没拉黑),
+    /// 不做迁移;改名、对印、重新配对重建记录时必须原样带上。读用 ``blocked``。
+    public let isBlocked: Bool?
+
+    public var blocked: Bool { isBlocked ?? false }
 
     public init(
         id: String, displayName: String, isVerified: Bool, deviceId: String? = nil, emoji: [String]? = nil,
-        acceptedInviteDigest: String? = nil, pairedAt: Date? = nil
+        acceptedInviteDigest: String? = nil, pairedAt: Date? = nil, isBlocked: Bool? = nil
     ) {
         self.id = id
         self.displayName = displayName
@@ -41,6 +46,13 @@ public struct AppGroupContact: Codable, Equatable, Identifiable, Hashable, Senda
         self.emoji = emoji
         self.acceptedInviteDigest = acceptedInviteDigest
         self.pairedAt = pairedAt
+        self.isBlocked = isBlocked
+    }
+
+    /// 同一条记录,只换拉黑标记(其余字段原样)。
+    public func withBlocked(_ blocked: Bool) -> AppGroupContact {
+        AppGroupContact(id: id, displayName: displayName, isVerified: isVerified, deviceId: deviceId, emoji: emoji,
+                        acceptedInviteDigest: acceptedInviteDigest, pairedAt: pairedAt, isBlocked: blocked ? true : nil)
     }
 }
 

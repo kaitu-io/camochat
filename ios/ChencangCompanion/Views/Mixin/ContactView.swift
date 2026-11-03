@@ -34,6 +34,7 @@ struct ContactView: View {
     @State private var renameText = ""
     @State private var confirmClear = false
     @State private var confirmDelete = false
+    @State private var confirmBlock = false
     @State private var shareWire: ShareWire?
 
     private var contact: AppGroupContact? {
@@ -44,18 +45,10 @@ struct ContactView: View {
         ScrollView {
             VStack(spacing: Moyu.Space.xl) {
                 header
-                Button {
-                    model.apply(ShellNav.sendMessage(from: ShellState(tab: model.selectedTab, path: model.path), contactId: contactId))
-                } label: {
-                    Text(L10n.contactsMessage)
-                        .font(moyuFont(Moyu.FontSize.body, weight: .medium))
-                        .foregroundStyle(Moyu.Palette.accentOnPrimary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, Moyu.Space.m)
-                        .background(Moyu.Palette.accentPrimary, in: RoundedRectangle(cornerRadius: Moyu.Radius.input, style: .continuous))
+                // 已拉黑:不发消息(两个方向都没有对话),解除拉黑后恢复。
+                if contact?.blocked != true {
+                    messageButton
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("contact-message")
                 if let response = resendableResponse(for: contactId, in: responses.records) {
                     resendResponse(response)
                 }
@@ -65,7 +58,15 @@ struct ContactView: View {
                     onConfirm: { Task { await markVerified() } }
                 )
                 ActionsGroup(
+                    blocked: contact?.blocked == true,
                     onClear: { confirmClear = true },
+                    onToggleBlock: {
+                        if contact?.blocked == true {
+                            Task { try? await contactsStore.setBlocked(contactId: contactId, false) }
+                        } else {
+                            confirmBlock = true
+                        }
+                    },
                     onDelete: { confirmDelete = true }
                 )
             }
@@ -86,12 +87,35 @@ struct ContactView: View {
         } message: {
             Text(L10n.contactsClearBody)
         }
+        .confirmationDialog(L10n.contactsBlockConfirmTitle, isPresented: $confirmBlock, titleVisibility: .visible) {
+            Button(L10n.contactsBlockConfirmOk, role: .destructive) { Task { await blockContact() } }
+            Button(L10n.commonCancel, role: .cancel) {}
+        } message: {
+            Text(L10n.contactsBlockConfirmBody)
+        }
         .confirmationDialog(L10n.contactsDeleteTitle, isPresented: $confirmDelete, titleVisibility: .visible) {
             Button(L10n.commonDelete, role: .destructive) { Task { await deleteContact() } }
             Button(L10n.commonCancel, role: .cancel) {}
         } message: {
             Text(L10n.contactsDeleteBody)
         }
+    }
+
+    // MARK: - 发消息
+
+    private var messageButton: some View {
+        Button {
+            model.apply(ShellNav.sendMessage(from: ShellState(tab: model.selectedTab, path: model.path), contactId: contactId))
+        } label: {
+            Text(L10n.contactsMessage)
+                .font(moyuFont(Moyu.FontSize.body, weight: .medium))
+                .foregroundStyle(Moyu.Palette.accentOnPrimary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Moyu.Space.m)
+                .background(Moyu.Palette.accentPrimary, in: RoundedRectangle(cornerRadius: Moyu.Radius.input, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("contact-message")
     }
 
     // MARK: - 再发一次我的配对码
@@ -161,6 +185,20 @@ struct ContactView: View {
         Task { try? await model.threadCleaner.clear(peerId: contactId) }
     }
 
+    /// 拉黑:只打标记(消息、会话都留着),回主界面,再问要不要发邮件告知开发者。
+    private func blockContact() async {
+        let name = contact?.displayName ?? ""
+        do {
+            try await contactsStore.setBlocked(contactId: contactId, true)
+        } catch {
+            NSLog("CCCHAT 拉黑写入失败:\(error)")
+            return
+        }
+        model.didBlock(ModerationMail.blockNotice(
+            displayName: name, fingerprintHex: contactId, now: Date(),
+            appVersion: AppInfo.versionText(info: Bundle.main.infoDictionary)))
+    }
+
     private func deleteContact() async {
         try? await contactsStore.remove(contactId: contactId)
         await SessionStore.shared.remove(for: contactId)
@@ -220,9 +258,11 @@ private struct TrustSealCard: View {
     }
 }
 
-/// 操作组:清空消息 / 删除联系人(danger)。
+/// 操作组:清空消息 / 拉黑或解除拉黑 / 删除联系人(danger)。
 private struct ActionsGroup: View {
+    let blocked: Bool
     let onClear: () -> Void
+    let onToggleBlock: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
@@ -233,6 +273,16 @@ private struct ActionsGroup: View {
                 titleColor: Moyu.Palette.textPrimary,
                 action: onClear
             )
+            Rectangle()
+                .fill(Moyu.Palette.borderHairline)
+                .frame(height: 1)
+            actionRow(
+                title: blocked ? L10n.contactsUnblockRow : L10n.contactsBlockRow,
+                subtitle: nil,
+                titleColor: blocked ? Moyu.Palette.textPrimary : Moyu.Palette.statusDanger,
+                action: onToggleBlock
+            )
+            .accessibilityIdentifier(blocked ? "contact-unblock" : "contact-block")
             Rectangle()
                 .fill(Moyu.Palette.borderHairline)
                 .frame(height: 1)
@@ -248,7 +298,7 @@ private struct ActionsGroup: View {
 
     private func actionRow(
         title: String,
-        subtitle: String,
+        subtitle: String?,
         titleColor: Color,
         action: @escaping () -> Void
     ) -> some View {
@@ -257,9 +307,11 @@ private struct ActionsGroup: View {
                 Text(title)
                     .font(moyuFont(Moyu.FontSize.body))
                     .foregroundStyle(titleColor)
-                Text(subtitle)
-                    .font(moyuFont(Moyu.FontSize.callout))
-                    .foregroundStyle(Moyu.Palette.textSecondary)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(moyuFont(Moyu.FontSize.callout))
+                        .foregroundStyle(Moyu.Palette.textSecondary)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Moyu.Space.m)

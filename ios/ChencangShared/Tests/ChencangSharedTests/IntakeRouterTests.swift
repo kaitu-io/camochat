@@ -108,3 +108,21 @@ final class IntakeRouterTests: XCTestCase {
         XCTAssertEqual(broken, .failed(.incomplete))
     }
 }
+
+// MARK: - 拉黑
+
+extension IntakeRouterTests {
+    func testBlockedSenderGivesBlockedFailureAndStoresNothing() async {
+        let service = ChatService(
+            store: store, crypto: EchoThreadCrypto(), contactIds: { ["alice"] },
+            isBlocked: { $0 == "alice" }, isWire: { $0.hasPrefix("🔒FAKE") })
+        let router = IntakeRouter(chatService: service, contactIds: { ["alice"] }, hasAwaitingInvites: { false }, kindOf: kindOf)
+
+        let route = await router.route("🔒FAKE:alice:你好")
+
+        XCTAssertEqual(route, .failed(.blocked))
+        XCTAssertEqual(IntakeFailure.blocked.message, L10n.intakeBlocked)
+        XCTAssertNil(IntakeFailure.blocked.nextStep)
+        XCTAssertTrue(store.messages(for: "alice").isEmpty)
+    }
+}

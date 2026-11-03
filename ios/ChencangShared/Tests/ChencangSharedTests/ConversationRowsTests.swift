@@ -124,3 +124,15 @@ final class ConversationRowsTests: XCTestCase {
         XCTAssertEqual(rows[0].last, msg)
     }
 }
+
+// MARK: - 拉黑
+
+extension ConversationRowsTests {
+    func testBlockedContactsNeverGetRows() {
+        let blocked = AppGroupContact(id: "x", displayName: "X", isVerified: false, isBlocked: true)
+        let visible = AppGroupContact(id: "a", displayName: "A", isVerified: false)
+        let latest = ["x": message("x", at: 5), "a": message("a", at: 1)]
+        XCTAssertEqual(conversationRows(contacts: [blocked, visible], latest: latest).map(\.id), ["a"])
+        XCTAssertEqual(contactRows(contacts: [blocked, visible]).map(\.id), ["a"])
+    }
+}

@@ -124,6 +124,7 @@ struct ChencangCompanionApp: App {
 private struct RootView: View {
     @EnvironmentObject var identityStore: IdentityStore
     @EnvironmentObject var model: MixinAppModel
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         // `model.showOnboarding` (not `identityStore.identity == nil`) is the
@@ -147,8 +148,29 @@ private struct RootView: View {
                             switch route {
                             case let .thread(peerId): ConversationThreadView(peerId: peerId)
                             case let .contact(id): ContactView(contactId: id)
+                            case .blockedContacts: BlockedContactsView()
                             }
                         }
+                }
+                // 拉黑确认后回到主界面,再问一次要不要发邮件告知开发者(用户自己的邮件 App,发不发由用户定)。
+                .alert(
+                    L10n.blockNotifyTitle,
+                    isPresented: Binding(
+                        get: { model.blockNoticeMail != nil },
+                        set: { if !$0 { model.blockNoticeMail = nil } }
+                    ),
+                    presenting: model.blockNoticeMail
+                ) { mail in
+                    Button(L10n.blockNotifySend) {
+                        model.blockNoticeMail = nil
+                        model.sendMail(mail, openURL: openURL)
+                    }
+                    Button(L10n.commonCancel, role: .cancel) { model.blockNoticeMail = nil }
+                } message: { _ in
+                    Text(L10n.blockNotifyBody)
+                }
+                .alert(L10n.mailCopiedFallback, isPresented: $model.mailCopiedNotice) {
+                    Button(L10n.commonOk, role: .cancel) {}
                 }
             }
         }

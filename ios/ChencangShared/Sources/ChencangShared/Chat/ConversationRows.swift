@@ -34,7 +34,7 @@ public struct ConversationRow: Equatable, Identifiable {
     }
 }
 
-/// 会话列表:所有联系人各一行,按 ``ConversationRow/time`` 倒序(没有时间的排最后,并列按 id)。
+/// 会话列表:所有(没拉黑的)联系人各一行,按 ``ConversationRow/time`` 倒序(没有时间的排最后,并列按 id)。
 /// 没有消息的联系人也出行(配对完找不到人会以为丢了、重复加);`excluding` 里的指纹(尚未发出回应的
 /// 接受方,只在联系人 tab「配对中」)在没有消息时不出行。纯函数,无副作用。
 public func conversationRows(
@@ -42,6 +42,7 @@ public func conversationRows(
 ) -> [ConversationRow] {
     contacts
         .compactMap { c -> ConversationRow? in
+            guard !c.blocked else { return nil }
             if let m = latest[c.id] { return ConversationRow(contact: c, last: m) }
             guard !excluding.contains(c.id) else { return nil }
             return ConversationRow(contact: c, preview: c.acceptedInviteDigest != nil ? .waitingPeer : .noMessages)
@@ -69,7 +70,7 @@ public struct ContactRow: Equatable, Identifiable {
 /// `excluding` 里的指纹不出行(尚未发出回应的接受方联系人只在「配对中」)。
 public func contactRows(contacts: [AppGroupContact], excluding: Set<String> = [], locale: Locale = .current) -> [ContactRow] {
     return contacts
-        .filter { !excluding.contains($0.id) }
+        .filter { !$0.blocked && !excluding.contains($0.id) }
         .sorted { a, b in
             let order = a.displayName.compare(b.displayName, options: .caseInsensitive, range: nil, locale: locale)
             if order != .orderedSame { return order == .orderedAscending }

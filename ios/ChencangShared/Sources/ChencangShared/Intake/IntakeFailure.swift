@@ -20,6 +20,8 @@ public enum IntakeFailure: Error, Equatable {
     case pendingInvite
     /// 「粘贴解密」时剪贴板里没有文字(空 / 只有空白)。
     case clipboardEmpty
+    /// 来自已拉黑的联系人:解开了但不显示。
+    case blocked
 
     /// 「粘贴解密」读到的剪贴板:空或只有空白 → ``clipboardEmpty``(不再当成「不是完整的加密消息」);否则 nil,照常分流。
     public static func forClipboard(_ text: String?) -> IntakeFailure? {
@@ -36,6 +38,7 @@ public enum IntakeFailure: Error, Equatable {
         case .saveFailed: return L10n.intakeErrorSaveFailed
         case .pendingInvite: return L10n.intakeErrorPendingInvite
         case .clipboardEmpty: return L10n.intakeErrorClipboardEmpty
+        case .blocked: return L10n.intakeBlocked
         }
     }
 
@@ -43,7 +46,7 @@ public enum IntakeFailure: Error, Equatable {
         switch self {
         case .noContacts: return .addContact
         case .cannotOpen: return .openApp
-        case .incomplete, .notOurs, .saveFailed, .clipboardEmpty, .pendingInvite: return nil
+        case .incomplete, .notOurs, .saveFailed, .clipboardEmpty, .pendingInvite, .blocked: return nil
         }
     }
 }

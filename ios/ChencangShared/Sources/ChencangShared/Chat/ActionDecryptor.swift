@@ -12,6 +12,8 @@ public enum ActionIntakeResult: Equatable {
     /// 配对码:原样交还给界面,由用户点「打开陈仓添加」时放进 `PendingIntakeStore`。扩展不握手。
     case pairingCode(PairingCodeKind, wire: String)
     case failed(IntakeFailure)
+    /// 来自已拉黑的联系人:已解开(棘轮照常推进并保存),但不写收件箱、不显示内容。
+    case blocked
 }
 
 /// Action Extension 的解密编排:归类 → 解 wire → 写收件箱 → 返回展示件。
@@ -72,6 +74,8 @@ public struct ActionDecryptor {
         guard let opened = await crypto.openWire(wire, candidates: contacts.map(\.id)) else {
             return .failed(hasAwaitingInvites() ? .pendingInvite : .cannotOpen)
         }
+        // 解密已推进并保存了会话状态;已拉黑的人只是不把内容交出去。
+        if contacts.contains(where: { $0.id == opened.peerId && $0.blocked }) { return .blocked }
         let entry = InboxEntry(opened: opened, id: newId(), timestamp: now())
         do {
             try inbox.append(entry)

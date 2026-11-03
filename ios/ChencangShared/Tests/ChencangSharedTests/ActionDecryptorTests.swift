@@ -293,3 +293,37 @@ final class ActionDecryptorTests: XCTestCase {
         return (bobSess, aliceSess)
     }
 }
+
+// MARK: - 拉黑
+
+/// 记下 openWire 是否被调用(被拉黑者的消息照样解开 = 棘轮照常推进,只是不入收件箱)。
+private final class RecordingCrypto: ThreadCrypto, @unchecked Sendable {
+    var openCount = 0
+    func sealText(peerId: String, text: String) async throws -> String { try await EchoThreadCrypto().sealText(peerId: peerId, text: text) }
+    func sealMedia(peerId: String, items: [MediaItem]) async throws -> String { try await EchoThreadCrypto().sealMedia(peerId: peerId, items: items) }
+    func openWire(_ wire: String, candidates: [String]) async -> OpenedWire? {
+        openCount += 1
+        return await EchoThreadCrypto().openWire(wire, candidates: candidates)
+    }
+}
+
+extension ActionDecryptorTests {
+    func testBlockedSenderGivesBlockedAndWritesNothingToInbox() async {
+        let inbox = AppGroupInbox(defaults: FakeAppGroupDefaults())
+        let crypto = RecordingCrypto()
+        let contacts = [AppGroupContact(id: "alice", displayName: "爱丽丝", isVerified: true, isBlocked: true),
+                        AppGroupContact(id: "bob", displayName: "鲍勃", isVerified: true)]
+        let d = ActionDecryptor(crypto: crypto, readContacts: { contacts }, inbox: inbox, hasAwaitingInvites: { false },
+                                now: { Date(timeIntervalSince1970: 42) }, newId: { "entry-1" }, kindOf: Self.fakeKind)
+
+        let result = await d.open("🔒FAKE:alice:你好")
+
+        XCTAssertEqual(result, .blocked)
+        XCTAssertEqual(crypto.openCount, 1, "still decrypted so the session state advances")
+        XCTAssertTrue(inbox.readAll().isEmpty)
+
+        // 没被拉黑的人照常
+        guard case .opened = await d.open("🔒FAKE:bob:hi") else { return XCTFail("bob should open") }
+        XCTAssertEqual(inbox.readAll().count, 1)
+    }
+}
