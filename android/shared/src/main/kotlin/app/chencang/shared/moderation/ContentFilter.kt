@@ -29,7 +29,7 @@ class ContentFilter(words: List<String>) {
     companion object {
         private const val ASSET = "moderation_wordlist.txt"
 
-        private val WS = Regex("\\s+")
+        private val WS = Regex("[\\s\\p{Z}]+")
 
         private fun normalize(s: String): String = s.trim().lowercase().replace(WS, " ")
 

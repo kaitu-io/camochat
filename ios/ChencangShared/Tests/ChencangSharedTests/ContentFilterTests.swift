@@ -36,4 +36,8 @@ final class ContentFilterTests: XCTestCase {
     func testShippedListDoesNotFlagOrdinaryWords() {
         XCTAssertFalse(ContentFilter.shared.isFlagged("个性交流"))
     }
+
+    func testIdeographicSpaceNormalized() {
+        XCTAssertTrue(ContentFilter(words: ["kill yourself"]).isFlagged("kill\u{3000}yourself"))
+    }
 }

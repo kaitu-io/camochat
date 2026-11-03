@@ -52,4 +52,9 @@ class ContentFilterTest {
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         assertFalse(ContentFilter.fromAssets(ctx).isFlagged("个性交流"))
     }
+
+    @Test
+    fun `ideographic space is normalized`() {
+        assertTrue(ContentFilter(listOf("kill yourself")).isFlagged("kill　yourself"))
+    }
 }
