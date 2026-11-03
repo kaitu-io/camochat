@@ -156,11 +156,8 @@ private struct ConversationRowView: View {
     }
 
     private var summaryText: String {
-        switch row.preview {
-        case let .message(last): return summaryPrivacy ? L10n.conversationsPreviewHidden : last.summary
-        case .waitingPeer: return L10n.conversationsPreviewWaitingPeer
-        case .noMessages: return L10n.conversationsPreviewNoMessages
-        }
+        if case .message = row.preview, summaryPrivacy { return L10n.conversationsPreviewHidden }
+        return row.summary()
     }
 
     /// 摘要一行:可选的「[未上传] 」前缀 + 摘要,两段各自着色。用 `AttributedString` 拼,

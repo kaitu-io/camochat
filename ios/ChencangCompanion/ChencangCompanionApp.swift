@@ -172,6 +172,9 @@ private struct RootView: View {
                 .alert(L10n.mailCopiedFallback, isPresented: $model.mailCopiedNotice) {
                     Button(L10n.commonOk, role: .cancel) {}
                 }
+                .alert(L10n.commonActionFailed, isPresented: $model.actionFailedNotice) {
+                    Button(L10n.commonOk, role: .cancel) {}
+                }
             }
         }
         // 根上唯一的向导 sheet:会话「＋」、联系人「添加联系人」、空状态按钮、配对链接、交接槽都经 `model.presentWizard` 设 `model.wizard`。

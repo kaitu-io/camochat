@@ -136,3 +136,19 @@ extension ConversationRowsTests {
         XCTAssertEqual(contactRows(contacts: [blocked, visible]).map(\.id), ["a"])
     }
 }
+
+extension ConversationRowsTests {
+    func testFilteredIncomingPreviewIsCoveredButOutgoingIsNot() {
+        let filter = ContentFilter(words: ["badword"])
+        let c = AppGroupContact(id: "a", displayName: "A", isVerified: false, deviceId: nil,
+                                acceptedInviteDigest: nil, pairedAt: nil)
+        func row(_ dir: ChatMessage.Direction, _ body: String) -> ConversationRow {
+            let m = ChatMessage(id: "m", peerId: "a", direction: dir, body: body,
+                                timestamp: Date(timeIntervalSince1970: 1), status: dir == .incoming ? .received : .sealed)
+            return conversationRows(contacts: [c], latest: ["a": m])[0]
+        }
+        XCTAssertEqual(row(.incoming, "a badword here").summary(filter: filter), L10n.previewFiltered)
+        XCTAssertEqual(row(.incoming, "fine").summary(filter: filter), "fine")
+        XCTAssertEqual(row(.outgoing, "a badword here").summary(filter: filter), "a badword here")
+    }
+}

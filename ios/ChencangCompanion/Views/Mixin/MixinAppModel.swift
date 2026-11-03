@@ -60,6 +60,8 @@ final class MixinAppModel: ObservableObject {
     @Published var blockNoticeMail: ModerationMail.Mail?
     /// 没有邮件 App:草稿已复制,提示发到哪个地址。
     @Published var mailCopiedNotice = false
+    /// 拉黑 / 解除拉黑写入失败:根上弹一次「操作失败,请重试」。
+    @Published var actionFailedNotice = false
 
     /// Onboarding 闸门(2026-08 controller 裁决):RootView 曾经拿
     /// `identityStore.identity == nil` 直接判定,但 identity 在幕 1(品牌幕)

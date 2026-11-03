@@ -90,6 +90,8 @@ private struct ThreadContent: View {
     @State private var recordingActive = false
     @State private var inCancelZone = false
     @State private var voiceToast: String?
+    @State private var askBlockAfterReport = false
+    @Environment(\.openURL) private var openURL
     @State private var permissionAlert: PermissionPrompt?
     /// 当前这次按压的令牌(审查修复 5):`beginRecording` 里的异步 `start()` 完成时,
     /// 只有这个值仍等于自己领到的令牌才允许去动 `recordingActive`/调用 `endRecording`——
@@ -219,6 +221,10 @@ private struct ThreadContent: View {
             }
             // 回前台:可见的等待项立即再试并重开窗口;离开前台:停止轮询。
             if newPhase == .active { model.pasteBar.recompute(); resumePolling() } else { poller.onHidden() }
+        }
+        .alert(L10n.reportAlsoBlockTitle, isPresented: $askBlockAfterReport) {
+            Button(L10n.reportAlsoBlockOk, role: .destructive) { blockAfterReport() }
+            Button(L10n.commonCancel, role: .cancel) {}
         }
         .alert(
             L10n.mediaStatusEncryptFailed,
@@ -416,11 +422,35 @@ private struct ThreadContent: View {
                 AppPasteboard.write(message.body)
                 showSentToast(L10n.commonCopied)
             },
+            onReport: { reportMessage(message) },
             onDelete: {
                 vm.messageDeleted(message.id)
                 Task { try? await model.threadCleaner.deleteMessage(id: message.id, peerId: peerId) }
             }
         )
+    }
+
+    /// 举报:把草稿交给用户的邮件 App(发不发由用户定),再问要不要顺手拉黑。
+    /// 稍等一下再弹,免得和「没有邮件 App、已复制」的提示叠在一起被 SwiftUI 吞掉。
+    private func reportMessage(_ message: ChatMessage) {
+        let mail = ModerationMail.report(
+            displayName: contact?.displayName ?? "", fingerprintHex: peerId, message: message, now: Date(),
+            appVersion: AppInfo.versionText(info: Bundle.main.infoDictionary))
+        model.sendMail(mail, openURL: openURL)
+        DispatchQueue.main.asyncAfter(deadline: .now() + Moyu.Motion.standard / 1000) { askBlockAfterReport = true }
+    }
+
+    private func blockAfterReport() {
+        Task {
+            do {
+                try await contactsStore.setBlocked(contactId: peerId, true)
+            } catch {
+                NSLog("CCCHAT 拉黑写入失败:\(error)")
+                model.actionFailedNotice = true
+                return
+            }
+            model.apply(ShellNav.contactBlocked(from: ShellState(tab: model.selectedTab, path: model.path)))
+        }
     }
 
     /// 不带动画、推迟到下一轮 run loop 再滚(终审 F2b):插入新行的这次事务先提交、布局先落定,
@@ -470,6 +500,7 @@ private struct ThreadContent: View {
             },
             onForward: { indices in forwardSource = ForwardSource(messageId: message.id, indices: indices) },
             onStatusTap: MessageStatusLine.isStatusTappable(message) ? { vm.reopenCard(for: message) } : nil,
+            onReport: { reportMessage(message) },
             onDelete: {
                 // 删掉的这条消息如果正在放语音,先停(审查修复 6)——不然消息/文件都没了,
                 // 播放器还在放着一段已经不属于任何消息的音频。

@@ -24,6 +24,17 @@ public struct ConversationRow: Equatable, Identifiable {
     /// 行尾时间与排序依据:有消息 = 最近一条的时间;没有消息 = 配对时间(老数据没有 → nil,不显示时间)。
     public var time: Date? { last?.timestamp ?? contact.pairedAt }
 
+    /// 摘要正文(不含隐私开关):入站文字命中过滤词 → `preview_filtered`,出站与媒体照旧。
+    public func summary(filter: ContentFilter = .shared) -> String {
+        switch preview {
+        case let .message(m):
+            if m.kind == .text, m.direction == .incoming, filter.isFlagged(m.body) { return L10n.previewFiltered }
+            return m.summary
+        case .waitingPeer: return L10n.conversationsPreviewWaitingPeer
+        case .noMessages: return L10n.conversationsPreviewNoMessages
+        }
+    }
+
     public init(contact: AppGroupContact, preview: Preview) {
         self.contact = contact
         self.preview = preview

@@ -5,13 +5,15 @@ public struct BubbleActions {
     public var onShare: (() -> Void)?
     public var onCopyEncrypted: (() -> Void)?
     public var onCopyText: (() -> Void)?
+    public var onReport: (() -> Void)?
     public var onDelete: (() -> Void)?
 
     public init(onShare: (() -> Void)? = nil, onCopyEncrypted: (() -> Void)? = nil,
-                onCopyText: (() -> Void)? = nil, onDelete: (() -> Void)? = nil) {
+                onCopyText: (() -> Void)? = nil, onReport: (() -> Void)? = nil, onDelete: (() -> Void)? = nil) {
         self.onShare = onShare
         self.onCopyEncrypted = onCopyEncrypted
         self.onCopyText = onCopyText
+        self.onReport = onReport
         self.onDelete = onDelete
     }
 
@@ -22,6 +24,7 @@ public struct BubbleActions {
         case .share: return onShare
         case .copyEncrypted: return onCopyEncrypted
         case .copyText: return onCopyText
+        case .report: return onReport
         case .delete: return onDelete
         }
     }
@@ -43,6 +46,12 @@ public struct MessageBubbleView: View {
 
     private var isSelf: Bool { message.direction == .outgoing }
 
+    /// 入站文字命中本地过滤词:先盖住,点一下只在这个视图里展开(不落盘,重进又盖)。
+    @State private var revealed = false
+    private var covered: Bool {
+        !isSelf && message.kind == .text && !revealed && ContentFilter.shared.isFlagged(message.body)
+    }
+
     /// 新类型占位不读 body(老数据存的是写死的中文),显示时按当前语言取。
     private var bodyText: String {
         message.kind == .unsupported ? L10n.threadUnsupportedMessage : message.body
@@ -61,14 +70,15 @@ public struct MessageBubbleView: View {
 
     public var body: some View {
         VStack(alignment: isSelf ? .trailing : .leading, spacing: Moyu.Space.xs) {
-            Text(bodyText)
+            Text(covered ? L10n.filteredCover : bodyText)
                 .font(moyuFont(Moyu.FontSize.body))
-                .italic(message.kind == .unsupported)
-                .foregroundStyle(message.kind == .unsupported ? Moyu.Palette.textSecondary : Moyu.Palette.textPrimary)
+                .italic(message.kind == .unsupported || covered)
+                .foregroundStyle(message.kind == .unsupported || covered ? Moyu.Palette.textSecondary : Moyu.Palette.textPrimary)
                 .padding(.horizontal, Moyu.Space.m)
                 .padding(.vertical, Moyu.Space.s)
                 .background(isSelf ? Moyu.Palette.bubbleSelf : Moyu.Palette.bubblePeer, in: shape)
                 .overlay { if !isSelf { shape.strokeBorder(Moyu.Palette.borderHairline, lineWidth: 1) } }
+                .onTapGesture { if covered { revealed = true } }
                 .modifier(BubbleContextMenu(message: message, actions: actions))
                 .frame(maxWidth: Moyu.Size.bubbleMax, alignment: isSelf ? .trailing : .leading)
             statusLabel

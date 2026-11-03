@@ -62,7 +62,12 @@ struct ContactView: View {
                     onClear: { confirmClear = true },
                     onToggleBlock: {
                         if contact?.blocked == true {
-                            Task { try? await contactsStore.setBlocked(contactId: contactId, false) }
+                            Task {
+                                do { try await contactsStore.setBlocked(contactId: contactId, false) } catch {
+                                    NSLog("CCCHAT 解除拉黑写入失败:\(error)")
+                                    model.actionFailedNotice = true
+                                }
+                            }
                         } else {
                             confirmBlock = true
                         }
@@ -192,6 +197,7 @@ struct ContactView: View {
             try await contactsStore.setBlocked(contactId: contactId, true)
         } catch {
             NSLog("CCCHAT 拉黑写入失败:\(error)")
+            model.actionFailedNotice = true
             return
         }
         model.didBlock(ModerationMail.blockNotice(

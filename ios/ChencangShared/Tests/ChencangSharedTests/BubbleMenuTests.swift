@@ -18,11 +18,18 @@ final class BubbleMenuTests: XCTestCase {
     }
 
     func testIncomingText() {
-        XCTAssertEqual(BubbleMenu.items(for: message(.incoming, wire: "🔒W")), [.copyText, .delete])
+        XCTAssertEqual(BubbleMenu.items(for: message(.incoming, wire: "🔒W")), [.copyText, .report, .delete])
+    }
+
+    func testReportOnlyForIncoming() {
+        XCTAssertTrue(BubbleMenu.items(for: message(.incoming)).contains(.report))
+        XCTAssertFalse(BubbleMenu.items(for: message(.outgoing, wire: "🔒W")).contains(.report))
+        XCTAssertFalse(BubbleMenu.items(for: message(.outgoing)).contains(.report))
+        XCTAssertEqual(BubbleMenu.title(.report, for: message(.incoming)), L10n.threadReport)
     }
 
     func testUnsupported() {
-        XCTAssertEqual(BubbleMenu.items(for: message(.incoming, kind: .unsupported)), [.delete])
+        XCTAssertEqual(BubbleMenu.items(for: message(.incoming, kind: .unsupported)), [.report, .delete])
     }
 
     func testTitles() {

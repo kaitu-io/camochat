@@ -44,7 +44,12 @@ struct BlockedContactsView: View {
             }
             .buttonStyle(.borderless)
             Button(L10n.contactsUnblockRow) {
-                Task { try? await contactsStore.setBlocked(contactId: contact.id, false) }
+                Task {
+                    do { try await contactsStore.setBlocked(contactId: contact.id, false) } catch {
+                        NSLog("CCCHAT 解除拉黑写入失败:\(error)")
+                        model.actionFailedNotice = true
+                    }
+                }
             }
             .font(moyuFont(Moyu.FontSize.callout, weight: .medium))
             .foregroundStyle(Moyu.Palette.accentPrimary)

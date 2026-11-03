@@ -51,6 +51,26 @@ public enum ModerationMail {
         )
     }
 
+    /// 举报一条收到的消息。文字带原文;媒体带 blob id(开发者据此让中转删文件)。
+    /// 时间取消息自己的时间(同 Android);`now` 仅为与 `blockNotice` 对齐的调用签名。
+    public static func report(displayName: String, fingerprintHex: String, message: ChatMessage,
+                              now: Date, appVersion: String) -> Mail {
+        var lines = [
+            "Reported contact: \(displayName)",
+            "Fingerprint: \(fingerprintHex.prefix(fingerprintChars))",
+            "Message time (UTC): \(isoSeconds(message.timestamp))",
+            "Type: \(message.kind.rawValue)",
+        ]
+        let blobIds = message.media?.map(\.blobId) ?? []
+        if message.kind == .text {
+            lines.append("Content:\n\(message.body)")
+        } else if !blobIds.isEmpty {
+            lines.append("Media IDs: \(blobIds.joined(separator: ","))")
+        }
+        lines.append("App: CamoChat \(appVersion) iOS")
+        return Mail(to: email, subject: "CamoChat report / 举报", body: lines.joined(separator: "\n") + "\n")
+    }
+
     static func isoSeconds(_ date: Date) -> String {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]

@@ -19,6 +19,8 @@ struct MediaItemRow: View {
     let onForward: ([Int]?) -> Void
     /// 状态行可点(`MessageStatusLine.isStatusTappable`)时由线程页给:重新出加密卡。nil = 不可点。
     var onStatusTap: (() -> Void)? = nil
+    /// 举报(只给对方发来的)。
+    var onReport: (() -> Void)? = nil
     let onDelete: () -> Void
 
     @EnvironmentObject private var model: MixinAppModel
@@ -140,6 +142,9 @@ struct MediaItemRow: View {
             Button { onForward(nil) } label: {
                 Label(L10n.mediaForwardAll(count), systemImage: "arrowshape.turn.up.right.2")
             }
+        }
+        if !isSelf, let onReport {
+            Button(action: onReport) { Label(L10n.threadReport, systemImage: "exclamationmark.bubble") }
         }
         Button(role: .destructive, action: onDelete) { Label(L10n.commonDelete, systemImage: "trash") }
     }
