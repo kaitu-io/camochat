@@ -3,7 +3,7 @@
 纯静态页面，不是运行时后端：**文字消息零网络**、不经过任何服务器；唯一的网络用途是语音/图片/视频的密文经媒体中转
 （`infra/media/`，源码公开）上传与下载，以及读取已签名的公开配置文件。
 
-内容：`index.html`（英文首页，浏览器语言为中文时自动跳到 `zh.html`）、`zh.html`（中文首页）、`privacy.html`（隐私政策）、
+内容：`index.html`（英文首页，浏览器语言为中文时自动跳到 `zh.html`）、`zh.html`（中文首页）、`privacy.html`（隐私政策）、`terms.html`（使用条款）、
 `verify.html` / `verify-zh.html`（验证正版：APK 签名指纹与配置验签公钥）、`style.css`（共用样式，颜色取自 Moyu token）、
 `favicon.svg`、`wordmark.svg`（取自 `brand/`）、`og.svg` → `og.png`（分享卡片图，改 og.svg 后用 Chrome headless 截 1200×630 重新生成）、
 `robots.txt`、`sitemap.xml`、`llms.txt`；`p/`（配对链接落地页）、`m/`（媒体分享落地页）、
@@ -22,7 +22,7 @@
    - 根目录页面**手工上传**，改动任一文件后执行（需要 AWS 凭据）：
 
      ```sh
-     for f in index.html zh.html privacy.html verify.html verify-zh.html; do
+     for f in index.html zh.html privacy.html terms.html verify.html verify-zh.html; do
        aws s3 cp "site/$f" "s3://chencang-site/$f" --content-type "text/html; charset=utf-8" --cache-control "max-age=300" --region ap-northeast-1
      done
      for f in favicon.svg og.svg wordmark.svg; do
