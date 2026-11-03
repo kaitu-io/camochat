@@ -66,6 +66,9 @@ object ContactTestTags {
     const val DELETE_CONFIRM = "contact-delete-confirm"
     const val MESSAGE = "contact-message"
     const val RESEND_RESPONSE = "contact-resend-response"
+    const val BLOCK = "contact-block"
+    const val BLOCK_CONFIRM = "contact-block-confirm"
+    const val UNBLOCK = "contact-unblock"
 }
 
 /**
@@ -97,6 +100,8 @@ fun ContactScreen(
         onRename = viewModel::rename,
         onClearMessages = viewModel::clearMessages,
         onDeleteContact = viewModel::deleteContact,
+        onBlock = viewModel::block,
+        onUnblock = viewModel::unblock,
     )
 }
 
@@ -113,8 +118,11 @@ internal fun ContactContent(
     onRename: (String) -> Unit,
     onClearMessages: () -> Unit,
     onDeleteContact: () -> Unit,
+    onBlock: () -> Unit = {},
+    onUnblock: () -> Unit = {},
 ) {
     var renaming by remember { mutableStateOf(false) }
+    var confirmBlock by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
 
@@ -185,7 +193,10 @@ internal fun ContactContent(
 
             Spacer(Modifier.height(Moyu.Space.Xl))
             ActionsGroup(
+                blocked = contact?.blocked == true,
                 onClear = { confirmClear = true },
+                onBlock = { confirmBlock = true },
+                onUnblock = onUnblock,
                 onDelete = { confirmDelete = true },
             )
         }
@@ -211,6 +222,23 @@ internal fun ContactContent(
             },
             dismissButton = {
                 TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.common_cancel)) }
+            },
+        )
+    }
+
+    if (confirmBlock) {
+        AlertDialog(
+            onDismissRequest = { confirmBlock = false },
+            title = { Text(stringResource(R.string.contacts_block_confirm_title)) },
+            text = { Text(stringResource(R.string.contacts_block_confirm_body)) },
+            confirmButton = {
+                TextButton(
+                    modifier = Modifier.testTag(ContactTestTags.BLOCK_CONFIRM),
+                    onClick = { confirmBlock = false; onBlock() },
+                ) { Text(stringResource(R.string.contacts_block_confirm_ok), color = moyuColors.statusDanger) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmBlock = false }) { Text(stringResource(R.string.common_cancel)) }
             },
         )
     }
@@ -275,9 +303,15 @@ private fun TrustSealCard(contact: Contact?, onConfirm: () -> Unit) {
     }
 }
 
-/** Action group: clear messages / delete contact (danger). */
+/** Action group: clear messages / block or unblock / delete contact (danger). */
 @Composable
-private fun ActionsGroup(onClear: () -> Unit, onDelete: () -> Unit) {
+private fun ActionsGroup(
+    blocked: Boolean,
+    onClear: () -> Unit,
+    onBlock: () -> Unit,
+    onUnblock: () -> Unit,
+    onDelete: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -293,6 +327,26 @@ private fun ActionsGroup(onClear: () -> Unit, onDelete: () -> Unit) {
             headlineContent = { Text(stringResource(R.string.contacts_clear_row)) },
             supportingContent = { Text(stringResource(R.string.contacts_clear_row_hint)) },
         )
+        HorizontalDivider(color = moyuColors.borderHairline)
+        if (blocked) {
+            ListItem(
+                colors = ListItemDefaults.colors(containerColor = moyuColors.surfaceRaised),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onUnblock)
+                    .testTag(ContactTestTags.UNBLOCK),
+                headlineContent = { Text(stringResource(R.string.contacts_unblock_row)) },
+            )
+        } else {
+            ListItem(
+                colors = ListItemDefaults.colors(containerColor = moyuColors.surfaceRaised),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onBlock)
+                    .testTag(ContactTestTags.BLOCK),
+                headlineContent = { Text(stringResource(R.string.contacts_block_row), color = moyuColors.statusDanger) },
+            )
+        }
         HorizontalDivider(color = moyuColors.borderHairline)
         ListItem(
             colors = ListItemDefaults.colors(containerColor = moyuColors.surfaceRaised),

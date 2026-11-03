@@ -23,6 +23,10 @@
 "action_ext_view_in_app" = "Open CamoChat to view";
 "add_contact_received_prompt" = "They sent theirs first?";
 "app_name" = "CamoChat";
+"block_notify_body" = "Send an email to let the developer know?";
+"block_notify_send" = "Send email";
+"block_notify_title" = "Contact blocked";
+"blocked_empty" = "No blocked contacts";
 "card_send_to" = "To %1$@ · paste it in your chat app";
 "card_share_header_media" = "🔒 CamoChat encrypted %1$@ · valid for 24 hours %2$@";
 "card_share_header_text" = "🔒 CamoChat encrypted message · decrypt with CamoChat %1$@";
@@ -55,6 +59,10 @@
 "composer_release_to_send" = "Release to send";
 "composer_to_keyboard" = "Switch to keyboard";
 "composer_to_voice" = "Switch to voice";
+"contacts_block_confirm_body" = "Their messages won't be shown and the chat will be hidden from your list. You can unblock them in Me → Blocked contacts.";
+"contacts_block_confirm_ok" = "Block";
+"contacts_block_confirm_title" = "Block this contact?";
+"contacts_block_row" = "Block contact";
 "contacts_clear" = "Clear";
 "contacts_clear_body" = "This deletes all local messages with them.";
 "contacts_clear_row" = "Clear messages";
@@ -83,6 +91,7 @@
 "contacts_row_cd" = "%1$@, %2$@";
 "contacts_send_back" = "Send code back";
 "contacts_tab" = "Contacts";
+"contacts_unblock_row" = "Unblock contact";
 "conversations_add_cd" = "Add";
 "conversations_empty_has_contacts" = "Still connecting. They'll show up here once you're connected — check progress in Contacts.";
 "conversations_empty_no_contacts" = "Add a contact to start your first encrypted chat.";
@@ -95,6 +104,7 @@
 "conversations_tab" = "Chats";
 "intake_action_open_app" = "Open CamoChat";
 "intake_already_in_thread" = "This message is already in your chat";
+"intake_blocked" = "This message is from a blocked contact and was not shown";
 "intake_error_cannot_decrypt" = "Can't decrypt. It may already be decrypted (check your chat), or it wasn't sent to you";
 "intake_error_clipboard_empty" = "There's no text on the clipboard";
 "intake_error_incomplete" = "That's not the whole encrypted message. Select all of it and try again";
@@ -107,6 +117,7 @@
 "invite_send_apk" = "Send the app file";
 "invite_send_link" = "Send download link";
 "invite_send_zip" = "Send as zip";
+"mail_copied_fallback" = "No email app found. The text was copied — please send it to hi@allnationconnect.com";
 "me_avatar_auto" = "Auto";
 "me_avatar_cd" = "My avatar, tap to change";
 "me_avatar_color" = "Background";
@@ -254,6 +265,7 @@
 "scanner_photo_no_code" = "No CamoChat QR code found in this image";
 "scanner_pick_photo" = "Choose from Photos";
 "settings_about" = "About";
+"settings_blocked_contacts" = "Blocked contacts";
 "settings_danger" = "Danger zone";
 "settings_erase_confirm" = "Erase";
 "settings_erase_confirm_body" = "This can't be undone. All contacts, chats, and your identity will be erased.";

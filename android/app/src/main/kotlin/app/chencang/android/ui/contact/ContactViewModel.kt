@@ -6,6 +6,7 @@ import app.chencang.shared.CcRepository
 import app.chencang.shared.chat.ChatRepository
 import app.chencang.shared.crypto.RatchetSessionStore
 import app.chencang.shared.model.Contact
+import app.chencang.shared.moderation.ModerationMail
 import app.chencang.shared.pairing.inband.PairingResponseRecord
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -22,7 +23,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Data layer for the contact page (spec 5.6). Resolves the persisted [Contact] by
- * [fingerprintHex] and carries four actions:
+ * [fingerprintHex] and carries these actions:
  *
  *  - [confirm] marks the contact verified (`repository.markVerified`). The page only shows
  *    the verify button while the contact is unverified; the call itself is idempotent.
@@ -34,6 +35,7 @@ import kotlinx.coroutines.launch
  *    retained pairing response, then clear the local thread. [deleted] fires only after
  *    everything has been persisted. Here the user deletes from the contact page on purpose; it is
  *    not the pairing flow's mismatch branch, but the same cleanup logic runs.
+ *  - [block] / [unblock] only flip `Contact.blocked`; [blocked] fires once the block is stored.
  */
 class ContactViewModel(
     private val fingerprintHex: String,
@@ -68,6 +70,29 @@ class ContactViewModel(
      *  popBackStack 回会话列表——不提前发,以免联系人已从列表消失但会话密钥
      *  或本地线程还没清干净。 */
     val deleted: SharedFlow<Unit> = _deleted.asSharedFlow()
+
+    private val _blocked = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /** 一次性事件：[block] 落盘后发，UI 收到即回主界面并询问是否发邮件告知开发者。 */
+    val blocked: SharedFlow<Unit> = _blocked.asSharedFlow()
+
+    /** 拉黑：只打标记——联系人、会话密钥、聊天记录都不动，解除后原样恢复。 */
+    fun block() {
+        viewModelScope.launch {
+            repository.setBlocked(fingerprintHex, true)
+            _blocked.emit(Unit)
+        }
+    }
+
+    fun unblock() {
+        viewModelScope.launch { repository.setBlocked(fingerprintHex, false) }
+    }
+
+    /** 「告知开发者」邮件草稿；联系人不存在时为 null。 */
+    suspend fun blockNotice(nowMillis: Long, appVersion: String): ModerationMail.Mail? {
+        val c = repository.contacts.first().firstOrNull { it.fingerprintHex == fingerprintHex } ?: return null
+        return ModerationMail.blockNotice(c.displayName, c.fingerprintHex, nowMillis, appVersion)
+    }
 
     fun confirm() {
         viewModelScope.launch { repository.markVerified(fingerprintHex) }

@@ -1,5 +1,6 @@
 package app.chencang.shared.intake
 
+import app.chencang.shared.chat.BlockedSenderException
 import app.chencang.shared.chat.ChatMessage
 import app.chencang.shared.chat.WireReceiver
 import com.google.common.truth.Truth.assertThat
@@ -30,11 +31,13 @@ class IncomingIntakeTest {
         stored: ChatMessage? = null,
         hasContacts: Boolean = true,
         hasAwaitingInvites: Boolean = false,
+        blocked: Set<String> = emptySet(),
     ) = IncomingIntake(
         receiver = receiver,
         findByWire = { stored },
         hasContacts = { hasContacts },
         hasAwaitingInvites = { hasAwaitingInvites },
+        isBlocked = { it in blocked },
         classifier = { kind },
     )
 
@@ -43,6 +46,22 @@ class IncomingIntakeTest {
         val r = FakeReceiver { msg("bob") }
         val out = intake(r, stored = msg("alice")).handle("🔒w")
         assertThat(out).isEqualTo(IntakeOutcome.AlreadyInThread("alice"))
+        assertThat(r.calls).isEqualTo(0)
+    }
+
+    @Test
+    fun `a message from a blocked sender is BLOCKED`() = runTest {
+        val r = FakeReceiver { throw BlockedSenderException("bob") }
+        assertThat(intake(r).handle("🔒w")).isEqualTo(IntakeOutcome.Failed(IntakeFailure.BLOCKED))
+        assertThat(IntakeFailure.BLOCKED.messageRes).isEqualTo(app.chencang.shared.R.string.intake_blocked)
+        assertThat(IntakeFailure.BLOCKED.actionRes).isNull()
+    }
+
+    @Test
+    fun `a stored wire of a blocked sender is BLOCKED, not its thread`() = runTest {
+        val r = FakeReceiver { msg("bob") }
+        val out = intake(r, stored = msg("alice"), blocked = setOf("alice")).handle("🔒w")
+        assertThat(out).isEqualTo(IntakeOutcome.Failed(IntakeFailure.BLOCKED))
         assertThat(r.calls).isEqualTo(0)
     }
 

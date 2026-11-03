@@ -276,4 +276,59 @@ class ContactViewModelTest {
             assertThat(awaitItem()).isNull()
         }
     }
+
+    @Test
+    fun `block marks the contact blocked, keeps history, and emits blocked`() = runTest {
+        val repo = CcRepository.forTest()
+        repo.upsertContact(contact("fp-a", username = "user-a"))
+        chatDb.dao().insert(
+            ChatMessage(id = "m1", peerUsername = "user-a", direction = ChatMessage.DIRECTION_IN, body = "hi", timestamp = 0L),
+        )
+        val sessionDao = FakeSessionStateDao()
+        val vm = vm("fp-a", repo, sessionStore = RatchetSessionStore(dao = sessionDao))
+
+        vm.blocked.test {
+            vm.block()
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        val stored = repo.contacts.first().single()
+        assertThat(stored.blocked).isTrue()
+        assertThat(repo.visibleContacts.first()).isEmpty()
+        // Blocking never deletes: no session removed, history intact.
+        assertThat(sessionDao.deleted).isEmpty()
+        assertThat(chatDb.dao().observeThread("user-a").first()).hasSize(1)
+    }
+
+    @Test
+    fun `unblock restores the contact and keeps history`() = runTest {
+        val repo = CcRepository.forTest()
+        repo.upsertContact(contact("fp-a", username = "user-a"))
+        repo.setBlocked("fp-a", true)
+        chatDb.dao().insert(
+            ChatMessage(id = "m1", peerUsername = "user-a", direction = ChatMessage.DIRECTION_IN, body = "hi", timestamp = 0L),
+        )
+        val vm = vm("fp-a", repo)
+
+        vm.unblock()
+        advanceUntilIdle()
+
+        assertThat(repo.contacts.first().single().blocked).isFalse()
+        assertThat(repo.visibleContacts.first().map { it.fingerprintHex }).containsExactly("fp-a")
+        assertThat(chatDb.dao().observeThread("user-a").first()).hasSize(1)
+    }
+
+    @Test
+    fun `blockNotice builds the mail from the contact`() = runTest {
+        val repo = CcRepository.forTest()
+        repo.upsertContact(contact("0123456789abcdef0123", username = "u"))
+        val vm = vm("0123456789abcdef0123", repo)
+
+        val mail = vm.blockNotice(nowMillis = 0L, appVersion = "1.0.3")!!
+
+        assertThat(mail.to).isEqualTo(app.chencang.shared.moderation.ModerationMail.MODERATION_EMAIL)
+        assertThat(mail.body).contains("Blocked contact: 联系人 0123456789abcdef0123")
+        assertThat(mail.body).contains("Fingerprint: 0123456789abcdef\n")
+    }
 }

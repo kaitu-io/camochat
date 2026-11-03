@@ -47,6 +47,7 @@ object SettingsTestTags {
     const val SHARE_APP = "settings-share-app"
     const val PRIVACY_POLICY = "settings-privacy-policy"
     const val TERMS = "settings-terms"
+    const val BLOCKED_CONTACTS = "settings-blocked-contacts"
 }
 
 /**
@@ -66,6 +67,7 @@ fun SettingsSections(
     onOpenAbout: () -> Unit = {},
     onOpenPrivacy: () -> Unit = {},
     onOpenTerms: () -> Unit = {},
+    onOpenBlockedContacts: () -> Unit = {},
     onShareApp: (asZip: Boolean) -> Unit = {},
     canShareApk: Boolean = ChannelFeatures.canShareApk,
     onRunUatLoopback: (suspend () -> String)? = null,
@@ -86,6 +88,15 @@ fun SettingsSections(
                 trailingContent = {
                     Switch(checked = summaryPrivacy, onCheckedChange = onSummaryPrivacyChange)
                 },
+            )
+            HorizontalDivider(color = moyuColors.borderHairline)
+            ListItem(
+                colors = ListItemDefaults.colors(containerColor = moyuColors.surfaceRaised),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onOpenBlockedContacts)
+                    .testTag(SettingsTestTags.BLOCKED_CONTACTS),
+                headlineContent = { Text(stringResource(R.string.settings_blocked_contacts)) },
             )
         }
 

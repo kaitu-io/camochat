@@ -24,13 +24,42 @@ class CcRepository(
     val contacts: Flow<List<Contact>> = store.data.map { it.contacts }
     val pendingInvites: Flow<List<PendingInvite>> = store.data.map { it.pendingInvites }
 
-    /** Insert or replace a contact, deduping by [Contact.fingerprintHex]. */
+    /** Contacts the lists show: everyone not blocked. */
+    val visibleContacts: Flow<List<Contact>> = contacts.map { list -> list.filterNot { it.blocked } }
+
+    /** Contacts the user blocked (Settings → Blocked contacts). */
+    val blockedContacts: Flow<List<Contact>> = contacts.map { list -> list.filter { it.blocked } }
+
+    /**
+     * Insert or replace a contact, deduping by [Contact.fingerprintHex]. A block on an
+     * existing contact survives the replace: only [setBlocked] lifts it.
+     */
     suspend fun upsertContact(contact: Contact) {
         store.updateData { snap ->
+            val existing = snap.contacts.firstOrNull { it.fingerprintHex == contact.fingerprintHex }
             val without = snap.contacts.filterNot { it.fingerprintHex == contact.fingerprintHex }
-            snap.copy(contacts = without + contact)
+            val merged = if (existing?.blocked == true) contact.copy(blocked = true) else contact
+            snap.copy(contacts = without + merged)
         }
     }
+
+    /** Block or unblock a contact. Nothing else changes: contact, session and history stay. */
+    suspend fun setBlocked(fingerprintHex: String, blocked: Boolean) {
+        store.updateData { snap ->
+            snap.copy(
+                contacts = snap.contacts.map {
+                    if (it.fingerprintHex == fingerprintHex) it.copy(blocked = blocked) else it
+                },
+            )
+        }
+    }
+
+    /**
+     * Whether [peer] — a session sender key / message peer, which for in-band contacts is the
+     * fingerprint and also the username — belongs to a blocked contact.
+     */
+    suspend fun isBlocked(peer: String): Boolean =
+        contacts.first().any { it.blocked && (it.fingerprintHex == peer || it.username == peer) }
 
     /**
      * Receiver-side local rename of a paired contact (the "备注"). The wire never

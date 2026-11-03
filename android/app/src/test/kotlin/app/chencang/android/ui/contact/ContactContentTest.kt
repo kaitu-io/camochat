@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ApplicationProvider
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import app.chencang.design.MoyuTheme
 import app.chencang.shared.R
 import app.chencang.shared.model.Contact
@@ -29,10 +30,13 @@ class ContactContentTest {
         onResend: (String) -> Unit = {},
         verified: Boolean = false,
         onConfirm: () -> Unit = {},
+        blocked: Boolean = false,
+        onBlock: () -> Unit = {},
+        onUnblock: () -> Unit = {},
     ) = compose.setContent {
         MoyuTheme {
             ContactContent(
-                contact = Contact(fingerprintHex = "fp", username = "fp", displayName = "阿青", pairedAt = 0L, verified = verified),
+                contact = Contact(fingerprintHex = "fp", username = "fp", displayName = "阿青", pairedAt = 0L, verified = verified, blocked = blocked),
                 resendableResponse = resendable,
                 onBack = {},
                 onMessage = {},
@@ -41,6 +45,8 @@ class ContactContentTest {
                 onRename = {},
                 onClearMessages = {},
                 onDeleteContact = {},
+                onBlock = onBlock,
+                onUnblock = onUnblock,
             )
         }
     }
@@ -75,5 +81,26 @@ class ContactContentTest {
         show(null, verified = true)
         compose.onNodeWithTag(ContactTestTags.CONFIRM).assertDoesNotExist()
         compose.onNodeWithText(str(R.string.verify_status_verified)).assertExists()
+    }
+
+    @Test
+    fun `block row asks for confirmation before blocking`() {
+        var blocked = 0
+        show(null, onBlock = { blocked++ })
+        compose.onNodeWithTag(ContactTestTags.UNBLOCK).assertDoesNotExist()
+        compose.onNodeWithTag(ContactTestTags.BLOCK).performScrollTo().performClick()
+        assertThat(blocked).isEqualTo(0)
+        compose.onNodeWithText(str(R.string.contacts_block_confirm_body)).assertExists()
+        compose.onNodeWithTag(ContactTestTags.BLOCK_CONFIRM).performClick()
+        assertThat(blocked).isEqualTo(1)
+    }
+
+    @Test
+    fun `a blocked contact shows unblock instead of block`() {
+        var unblocked = 0
+        show(null, blocked = true, onUnblock = { unblocked++ })
+        compose.onNodeWithTag(ContactTestTags.BLOCK).assertDoesNotExist()
+        compose.onNodeWithTag(ContactTestTags.UNBLOCK).performScrollTo().performClick()
+        assertThat(unblocked).isEqualTo(1)
     }
 }

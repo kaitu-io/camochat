@@ -3,6 +3,7 @@ package app.chencang.shared.intake
 import android.util.Log
 import androidx.annotation.StringRes
 import app.chencang.shared.R
+import app.chencang.shared.chat.BlockedSenderException
 import app.chencang.shared.chat.ChatMessage
 import app.chencang.shared.chat.WireReceiver
 import kotlinx.coroutines.CancellationException
@@ -28,6 +29,8 @@ import kotlinx.coroutines.CancellationException
  *   awaiting its reply (see `awaitingInvites`): most likely the sender has not been added yet.
  *   Takes precedence over [NO_CONTACTS] / [CANNOT_DECRYPT]. No action.
  * - [SAVE_FAILED]: decrypted, but storing it failed (`receiveWireText` threw).
+ * - [BLOCKED]: decrypted (or already stored), but the sender is a blocked contact: nothing is
+ *   shown. No action.
  */
 enum class IntakeFailure(@StringRes val messageRes: Int, @StringRes val actionRes: Int?) {
     INCOMPLETE(R.string.intake_error_incomplete, null),
@@ -37,6 +40,7 @@ enum class IntakeFailure(@StringRes val messageRes: Int, @StringRes val actionRe
     CANNOT_DECRYPT(R.string.intake_error_cannot_decrypt, R.string.intake_action_open_app),
     SAVE_FAILED(R.string.intake_error_save_failed, null),
     PENDING_INVITE(R.string.intake_error_pending_invite, null),
+    BLOCKED(R.string.intake_blocked, null),
 }
 
 sealed interface IntakeOutcome {
@@ -66,6 +70,8 @@ class IncomingIntake(
     private val findByWire: suspend (String) -> ChatMessage?,
     private val hasContacts: suspend () -> Boolean,
     private val hasAwaitingInvites: suspend () -> Boolean,
+    /** Whether a stored message's peer is blocked (production = `CcRepository.isBlocked`). */
+    private val isBlocked: suspend (peer: String) -> Boolean = { false },
     private val classifier: (String) -> IntakeKind = { IntakeClassifier.classify(it) },
 ) : IntakeHandler {
 
@@ -85,11 +91,16 @@ class IncomingIntake(
     }
 
     private suspend fun handleMessage(wire: String): IntakeOutcome {
-        findByWire(wire)?.let { return IntakeOutcome.AlreadyInThread(it.peerUsername) }
+        findByWire(wire)?.let {
+            if (isBlocked(it.peerUsername)) return IntakeOutcome.Failed(IntakeFailure.BLOCKED)
+            return IntakeOutcome.AlreadyInThread(it.peerUsername)
+        }
         val stored = try {
             receiver.receiveWireText(wire)
         } catch (e: CancellationException) {
             throw e
+        } catch (_: BlockedSenderException) {
+            return IntakeOutcome.Failed(IntakeFailure.BLOCKED)
         } catch (e: Exception) {
             Log.w(TAG, "intake: store after decrypt failed: ${e.javaClass.simpleName}")
             return IntakeOutcome.Failed(IntakeFailure.SAVE_FAILED)

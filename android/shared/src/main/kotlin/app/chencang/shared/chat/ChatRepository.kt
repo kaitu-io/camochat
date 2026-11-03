@@ -21,10 +21,18 @@ import uniffi.chencang.encodeWire
 import uniffi.chencang.mediaBlobId
 import java.io.IOException
 
+/**
+ * Thrown by [ChatRepository.receiveWireText] when the message decrypted but its sender is
+ * blocked: the ratchet advanced and was saved, the message itself was dropped (not stored,
+ * no callbacks).
+ */
+class BlockedSenderException(val peer: String) : Exception("sender is blocked")
+
 interface WireReceiver {
     /**
      * 解密一段粘贴/选中的文字;成功→已落库的 in 消息,不是陈仓密文或无会话→null。
      * 解密成功但落库失败 → 抛出(棘轮已推进,不能装作「不是密文」)。
+     * 发件人已被拉黑 → 抛 [BlockedSenderException](棘轮照常保存,消息不入库)。
      */
     suspend fun receiveWireText(wire: String): ChatMessage?
 }
@@ -52,6 +60,11 @@ class ChatRepository(
      * 接受方留着的「可重发的回应暗号」可以清掉了（spec three-tab-shell §3.5.6）。解不开、没落库时不调。
      */
     private val onIncomingStored: suspend (peerUsername: String) -> Unit = {},
+    /**
+     * 发件人是否已被拉黑（生产 = `CcRepository.isBlocked`）。解密之后、落库之前查：被拉黑者的消息
+     * 不入库、不回调，抛 [BlockedSenderException]；棘轮状态已在解密时保存，不受影响。
+     */
+    private val isBlocked: suspend (peer: String) -> Boolean = { false },
     /** First line of every share text, in the system language at the moment of sharing/receiving. */
     private val shareHeaders: ShareHeaders,
 ) : WireReceiver {
@@ -131,6 +144,7 @@ class ChatRepository(
             } catch (_: RatchetSessionStore.NoSessionMatched) {
                 null
             } ?: return@withContext null
+            if (isBlocked(any.senderKey)) throw BlockedSenderException(any.senderKey)
             val decoded: DecodedMessage? = try {
                 decodeFrame(any.plaintext)
             } catch (_: Exception) {

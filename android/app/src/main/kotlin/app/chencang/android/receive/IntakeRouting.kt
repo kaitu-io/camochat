@@ -30,6 +30,8 @@ object IntakeRouting {
                 IntakeRoute.Ask(R.string.intake_error_no_contacts, R.string.pairing_add_contact, LaunchRequest.AddContact)
             IntakeFailure.CANNOT_DECRYPT ->
                 IntakeRoute.Ask(R.string.intake_error_cannot_decrypt, R.string.intake_action_open_app, LaunchRequest.None)
+            // Never open the blocked sender's thread.
+            IntakeFailure.BLOCKED -> IntakeRoute.Notice(R.string.intake_blocked, then = null)
             else -> IntakeRoute.Notice(outcome.failure.messageRes, then = null)
         }
     }

@@ -57,6 +57,7 @@ class ChatRepositoryTest {
     private fun repoWith(
         crypto: SessionCrypto,
         onIncomingStored: suspend (String) -> Unit = {},
+        isBlocked: suspend (String) -> Boolean = { false },
     ): ChatRepository {
         val context = ApplicationProvider.getApplicationContext<Context>()
         return ChatRepository(
@@ -66,6 +67,7 @@ class ChatRepositoryTest {
             mediaFiles = MediaFiles(File(context.cacheDir, "media-test-${crypto.hashCode()}")),
             inTransaction = db.inTransactionRunner(),
             onIncomingStored = onIncomingStored,
+            isBlocked = isBlocked,
             shareHeaders = FakeShareHeaders,
         )
     }
@@ -241,5 +243,37 @@ class ChatRepositoryTest {
 
         assertThat(received!!.body).isEqualTo("你好")
         assertThat(db.dao().getById(received.id)).isNotNull()
+    }
+
+    @Test
+    fun `receiveWireText from a blocked sender throws and stores nothing`() = runTest {
+        val stored = mutableListOf<String>()
+        var decrypts = 0
+        val crypto = object : SessionCrypto {
+            override suspend fun encryptToBytes(peerUsername: String, plaintext: ByteArray) = plaintext
+            override suspend fun decryptFromBytes(peerUsername: String, ciphertext: ByteArray) = ciphertext
+            override suspend fun decryptFromBytesAny(ciphertext: ByteArray): SessionCrypto.DecryptedAnyBytes {
+                decrypts++ // the real store persists the advanced ratchet inside this call
+                return SessionCrypto.DecryptedAnyBytes(senderKey = "alice", plaintext = ciphertext)
+            }
+        }
+        val blocking = repoWith(crypto, onIncomingStored = { stored += it }, isBlocked = { it == "alice" })
+        val wire = blocking.sendText("alice", "你好")
+        val before = db.dao().observeThread("alice").first().size
+
+        val e = runCatching { blocking.receiveWireText(wire) }.exceptionOrNull()
+
+        assertThat(e).isInstanceOf(BlockedSenderException::class.java)
+        assertThat((e as BlockedSenderException).peer).isEqualTo("alice")
+        assertThat(decrypts).isEqualTo(1)
+        assertThat(db.dao().observeThread("alice").first()).hasSize(before)
+        assertThat(stored).isEmpty()
+    }
+
+    @Test
+    fun `receiveWireText from a non-blocked sender is unaffected by the block check`() = runTest {
+        val blocking = repoWith(IdentityCrypto(), isBlocked = { it == "bob" })
+        val wire = blocking.sendText("alice", "你好")
+        assertThat(blocking.receiveWireText(wire)!!.peerUsername).isEqualTo("alice")
     }
 }

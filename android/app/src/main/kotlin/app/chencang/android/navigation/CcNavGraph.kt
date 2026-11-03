@@ -7,15 +7,20 @@ import android.widget.Toast
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,7 +66,9 @@ import app.chencang.android.ui.pairing.clipboardText
 import app.chencang.android.ui.pairing.launchPairingShare
 import app.chencang.android.ui.recovery.RecoveryExportScreen
 import app.chencang.android.ui.recovery.RecoveryRestoreScreen
+import app.chencang.android.moderation.MailLauncher
 import app.chencang.android.ui.settings.AboutLinks
+import app.chencang.android.ui.settings.BlockedContactsScreen
 import app.chencang.android.ui.settings.SettingsSections
 import app.chencang.android.ui.share.ShareAppDialog
 import app.chencang.android.update.ManualCheckResult
@@ -73,6 +80,7 @@ import app.chencang.android.ui.terms.TermsGateScreen
 import app.chencang.shared.R
 import app.chencang.shared.intake.IntakeFailure
 import app.chencang.shared.intake.IntakeOutcome
+import app.chencang.shared.moderation.ModerationMail
 import app.chencang.shared.pairing.inband.PendingItem
 import app.chencang.shared.pairing.inband.PendingKind
 import app.chencang.shared.uat.UatLoopback
@@ -92,6 +100,8 @@ object Routes {
     const val RECOVERY_EXPORT = "recoveryExport"
     const val RECOVERY_RESTORE = "recoveryRestore"
     const val ABOUT = "about"
+    /** 设置 → 已拉黑的联系人。 */
+    const val BLOCKED = "blockedContacts"
 
     fun contactRoute(fingerprintHex: String) = "contact/$fingerprintHex"
     fun conversationRoute(peerUsername: String) = "conversation/${Uri.encode(peerUsername)}"
@@ -131,6 +141,24 @@ fun CcNavGraph(
     // 粘贴失败的提示；NO_CONTACTS 提供「添加联系人」，其余只有「好」。
     var intakeNotice by rememberSaveable { mutableStateOf<IntakeFailure?>(null) }
     val addContact = { nav.navigate(Routes.pairingWizardRoute("initiator")) }
+    // 拉黑之后回到主界面，再问一句要不要发邮件告知开发者（邮件草稿交给用户自己的邮件 App）。
+    var blockNoticeMail by rememberSaveable(stateSaver = MailSaver) { mutableStateOf<ModerationMail.Mail?>(null) }
+    blockNoticeMail?.let { mail ->
+        AlertDialog(
+            onDismissRequest = { blockNoticeMail = null },
+            title = { Text(stringResource(R.string.block_notify_title)) },
+            text = { Text(stringResource(R.string.block_notify_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    blockNoticeMail = null
+                    MailLauncher.send(context, mail)
+                }) { Text(stringResource(R.string.block_notify_send)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { blockNoticeMail = null }) { Text(stringResource(R.string.common_cancel)) }
+            },
+        )
+    }
     intakeNotice?.let { failure ->
         IntakeNoticeDialog(
             failure = failure,
@@ -256,6 +284,7 @@ fun CcNavGraph(
                                 onRecoveryExport = { nav.navigate(Routes.RECOVERY_EXPORT) },
                                 onRecoveryRestore = { nav.navigate(Routes.RECOVERY_RESTORE) },
                                 onOpenAbout = { nav.navigate(Routes.ABOUT) },
+                                onOpenBlockedContacts = { nav.navigate(Routes.BLOCKED) },
                             )
                         },
                     )
@@ -364,6 +393,15 @@ fun CcNavGraph(
                     nav.backToMainAfterContactDeleted()
                 }
             }
+            // Blocked: the conversation is hidden now, so leave it the same way as after a delete,
+            // then offer to tell the developer.
+            LaunchedEffect(vm) {
+                vm.blocked.collect {
+                    val mail = vm.blockNotice(System.currentTimeMillis(), BuildConfig.VERSION_NAME)
+                    nav.backToMainAfterContactDeleted()
+                    blockNoticeMail = mail
+                }
+            }
             ContactScreen(
                 viewModel = vm,
                 onBack = { nav.popBackStack() },
@@ -382,6 +420,17 @@ fun CcNavGraph(
                         )
                     }
                 },
+            )
+        }
+
+        composable(Routes.BLOCKED) {
+            val blocked by locator.repository.blockedContacts.collectAsStateWithLifecycle(initialValue = emptyList())
+            val unblockScope = rememberCoroutineScope()
+            BlockedContactsScreen(
+                contacts = blocked,
+                onOpenContact = { fp -> nav.navigate(Routes.contactRoute(fp)) },
+                onUnblock = { fp -> unblockScope.launch { locator.repository.setBlocked(fp, false) } },
+                onBack = { nav.popBackStack() },
             )
         }
 
@@ -441,6 +490,7 @@ private fun MeSettings(
     onRecoveryExport: () -> Unit,
     onRecoveryRestore: () -> Unit,
     onOpenAbout: () -> Unit,
+    onOpenBlockedContacts: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -478,6 +528,7 @@ private fun MeSettings(
         onOpenPrivacy = { AboutLinks.openPrivacy(context, locator.configRepository.config.value.shareSite) },
         onOpenTerms = { AboutLinks.openTerms(context, locator.configRepository.config.value.shareSite) },
         onOpenAbout = onOpenAbout,
+        onOpenBlockedContacts = onOpenBlockedContacts,
         onShareApp = { asZip -> scope.launch { ApkShare.share(context, asZip) } },
         onRunUatLoopback = if (BuildConfig.DEBUG) ({ UatLoopback.runE2E() }) else null,
         onSeedUat = if (BuildConfig.DEBUG) ({
@@ -491,6 +542,12 @@ private fun MeSettings(
         }) else null,
     )
 }
+
+/** Keeps the pending "tell the developer?" mail across rotation / process death. */
+private val MailSaver = listSaver<ModerationMail.Mail?, String>(
+    save = { m -> m?.let { listOf(it.to, it.subject, it.body) } ?: emptyList() },
+    restore = { l -> if (l.size == 3) ModerationMail.Mail(l[0], l[1], l[2]) else null },
+)
 
 // ---- ViewModel factories ----
 
@@ -514,7 +571,8 @@ private fun conversationListFactory(locator: CcServiceLocator) =
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             @Suppress("UNCHECKED_CAST")
             return ConversationListViewModel(
-                contacts = locator.repository.contacts,
+                // Blocked contacts and their conversations are hidden (unblocking brings them back).
+                contacts = locator.repository.visibleContacts,
                 latest = locator.chatRepository.observeLatestPerPeer(),
                 summaryPrivacy = locator.appPrefs.summaryPrivacy,
                 failedOutgoingMedia = locator.chatRepository.observeFailedOutgoingMedia(),
@@ -532,7 +590,7 @@ private fun contactListFactory(locator: CcServiceLocator) =
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             @Suppress("UNCHECKED_CAST")
             return ContactListViewModel(
-                contacts = locator.repository.contacts,
+                contacts = locator.repository.visibleContacts,
                 invites = locator.pendingInviteStore.records,
                 responses = locator.pairingResponseStore.records,
             ) as T

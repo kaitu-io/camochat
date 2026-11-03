@@ -231,6 +231,7 @@ class CcServiceLocator private constructor(
                     // In-band pairing sets a contact's username to its fingerprint, which is
                     // also the session's sender key.
                     onIncomingStored = { peer -> pairingCoordinator.forgetPeer(peer) },
+                    isBlocked = repository::isBlocked,
                     shareHeaders = shareHeaders,
                 )
 
@@ -305,6 +306,7 @@ class CcServiceLocator private constructor(
                         hasAwaitingInvites = {
                             awaitingInvites(pendingInviteStore.all(), System.currentTimeMillis()).isNotEmpty()
                         },
+                        isBlocked = repository::isBlocked,
                     ),
                     configRepository = configRepository,
                     chatDb = chatDb,

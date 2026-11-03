@@ -49,4 +49,9 @@ class IntakeRoutingTest {
                 .isEqualTo(IntakeRoute.Notice(f.messageRes, then = null))
         }
     }
+
+    @Test fun `blocked sender is a plain notice`() {
+        assertThat(IntakeRouting.route(IntakeOutcome.Failed(IntakeFailure.BLOCKED)))
+            .isEqualTo(IntakeRoute.Notice(R.string.intake_blocked, then = null))
+    }
 }

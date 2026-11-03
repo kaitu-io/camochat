@@ -122,6 +122,48 @@ class ContactListSerializerTest {
     }
 
     @Test
+    fun `snapshot written without blocked decodes as not blocked`() = runTest {
+        // A contact stored by a build that predates blocking: every field except `blocked`.
+        val oldBytes = Cbor.encodeToByteArray(
+            PreBlockedContactListSnapshot.serializer(),
+            PreBlockedContactListSnapshot(
+                contacts = listOf(
+                    PreBlockedContact(
+                        fingerprintHex = "aa11",
+                        username = "aa11",
+                        displayName = "老周",
+                        pairedAt = 1000L,
+                        pairingState = PairingState.PAIRED,
+                        safetyEmoji = listOf("🐉"),
+                        verified = true,
+                        deviceId = "aa11",
+                        acceptedInviteDigest = "0f",
+                    ),
+                ),
+            ),
+        )
+
+        val restored = ContactListSerializer.readFrom(ByteArrayInputStream(oldBytes))
+
+        val c = restored.contacts.single()
+        assertThat(c.blocked).isFalse()
+        assertThat(c.displayName).isEqualTo("老周")
+        assertThat(c.acceptedInviteDigest).isEqualTo("0f")
+    }
+
+    @Test
+    fun `blocked round-trips`() = runTest {
+        val snap = ContactListSnapshot(
+            contacts = listOf(Contact("aa11", "aa11", "老周", 1000L, blocked = true)),
+        )
+        val out = ByteArrayOutputStream()
+        ContactListSerializer.writeTo(snap, out)
+        val restored = ContactListSerializer.readFrom(ByteArrayInputStream(out.toByteArray()))
+        assertThat(restored).isEqualTo(snap)
+        assertThat(restored.contacts.single().blocked).isTrue()
+    }
+
+    @Test
     fun `digest round-trips`() = runTest {
         val snap = ContactListSnapshot(
             contacts = listOf(
@@ -182,4 +224,24 @@ private data class LegacyContact(
 @Serializable
 private data class LegacyContactListSnapshot(
     val contacts: List<LegacyContact> = emptyList(),
+)
+
+/** Mirror of the on-disk contact schema just before `blocked` was added. */
+@Serializable
+private data class PreBlockedContact(
+    @SerialName("fingerprint_hex") val fingerprintHex: String,
+    val username: String,
+    val displayName: String,
+    @SerialName("paired_at") val pairedAt: Long,
+    @SerialName("pairing_state") val pairingState: PairingState,
+    @SerialName("safety_emoji") val safetyEmoji: List<String>,
+    val verified: Boolean,
+    @SerialName("session_state") val sessionState: ByteArray? = null,
+    @SerialName("device_id") val deviceId: String?,
+    @SerialName("accepted_invite_digest") val acceptedInviteDigest: String?,
+)
+
+@Serializable
+private data class PreBlockedContactListSnapshot(
+    val contacts: List<PreBlockedContact> = emptyList(),
 )

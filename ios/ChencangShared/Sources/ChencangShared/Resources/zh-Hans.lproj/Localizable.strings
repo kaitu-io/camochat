@@ -23,6 +23,10 @@
 "action_ext_view_in_app" = "打开陈仓查看";
 "add_contact_received_prompt" = "对方先发给我了？";
 "app_name" = "陈仓";
+"block_notify_body" = "是否发邮件告知开发者？";
+"block_notify_send" = "发邮件";
+"block_notify_title" = "已拉黑";
+"blocked_empty" = "没有拉黑的联系人";
 "card_send_to" = "发给 %1$@ · 去聊天软件里粘贴给 TA";
 "card_share_header_media" = "🔒 陈仓加密%1$@ · 24 小时内有效 %2$@";
 "card_share_header_text" = "🔒 陈仓加密消息 · 用陈仓解密 %1$@";
@@ -55,6 +59,10 @@
 "composer_release_to_send" = "松开 发送";
 "composer_to_keyboard" = "切换到键盘";
 "composer_to_voice" = "切换到语音";
+"contacts_block_confirm_body" = "拉黑后不再显示 TA 的消息，会话从列表隐藏。可在 我 → 已拉黑的联系人 解除。";
+"contacts_block_confirm_ok" = "拉黑";
+"contacts_block_confirm_title" = "拉黑这位联系人？";
+"contacts_block_row" = "拉黑";
 "contacts_clear" = "清空";
 "contacts_clear_body" = "将删除与 TA 的全部本地消息。";
 "contacts_clear_row" = "清空消息";
@@ -83,6 +91,7 @@
 "contacts_row_cd" = "%1$@，%2$@";
 "contacts_send_back" = "发回配对码";
 "contacts_tab" = "联系人";
+"contacts_unblock_row" = "解除拉黑";
 "conversations_add_cd" = "添加";
 "conversations_empty_has_contacts" = "还在添加中。对方加好后会出现在这里，进度可以去联系人里看。";
 "conversations_empty_no_contacts" = "添加一位联系人，开始第一段加密对话。";
@@ -95,6 +104,7 @@
 "conversations_tab" = "会话";
 "intake_action_open_app" = "打开陈仓";
 "intake_already_in_thread" = "这条消息已经在对话里了";
+"intake_blocked" = "这条消息来自已拉黑的联系人，未显示";
 "intake_error_cannot_decrypt" = "解不开。可能已经解过（看看和 TA 的对话），或者不是发给你的";
 "intake_error_clipboard_empty" = "剪贴板里没有文字";
 "intake_error_incomplete" = "没有选到完整的加密消息。请选中整条消息再试";
@@ -107,6 +117,7 @@
 "invite_send_apk" = "直接发安装包";
 "invite_send_link" = "发下载链接";
 "invite_send_zip" = "以压缩包发送";
+"mail_copied_fallback" = "没有找到邮件 App，内容已复制，请发到 hi@allnationconnect.com";
 "me_avatar_auto" = "自动";
 "me_avatar_cd" = "我的头像，轻点修改";
 "me_avatar_color" = "底色";
@@ -254,6 +265,7 @@
 "scanner_photo_no_code" = "这张图里没有找到陈仓的二维码";
 "scanner_pick_photo" = "从相册选";
 "settings_about" = "关于";
+"settings_blocked_contacts" = "已拉黑的联系人";
 "settings_danger" = "危险区";
 "settings_erase_confirm" = "删除";
 "settings_erase_confirm_body" = "此操作不可撤销。所有联系人、对话和身份将被清除。";

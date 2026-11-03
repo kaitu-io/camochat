@@ -25,6 +25,10 @@
     <string name="action_ext_view_in_app">打开陈仓查看</string>
     <string name="add_contact_received_prompt">对方先发给我了？</string>
     <string name="app_name">陈仓</string>
+    <string name="block_notify_body">是否发邮件告知开发者？</string>
+    <string name="block_notify_send">发邮件</string>
+    <string name="block_notify_title">已拉黑</string>
+    <string name="blocked_empty">没有拉黑的联系人</string>
     <string name="card_send_to">发给 %1$s · 去聊天软件里粘贴给 TA</string>
     <string name="card_share_header_media">🔒 陈仓加密%1$s · 24 小时内有效 %2$s</string>
     <string name="card_share_header_text">🔒 陈仓加密消息 · 用陈仓解密 %1$s</string>
@@ -64,6 +68,10 @@
     <plurals name="contacts_badge_cd">
         <item quantity="other">联系人，%1$d 项待处理</item>
     </plurals>
+    <string name="contacts_block_confirm_body">拉黑后不再显示 TA 的消息，会话从列表隐藏。可在 我 → 已拉黑的联系人 解除。</string>
+    <string name="contacts_block_confirm_ok">拉黑</string>
+    <string name="contacts_block_confirm_title">拉黑这位联系人？</string>
+    <string name="contacts_block_row">拉黑</string>
     <string name="contacts_clear">清空</string>
     <string name="contacts_clear_body">将删除与 TA 的全部本地消息。</string>
     <string name="contacts_clear_row">清空消息</string>
@@ -92,6 +100,7 @@
     <string name="contacts_row_cd">%1$s，%2$s</string>
     <string name="contacts_send_back">发回配对码</string>
     <string name="contacts_tab">联系人</string>
+    <string name="contacts_unblock_row">解除拉黑</string>
     <string name="conversations_add_cd">添加</string>
     <string name="conversations_empty_has_contacts">还在添加中。对方加好后会出现在这里，进度可以去联系人里看。</string>
     <string name="conversations_empty_no_contacts">添加一位联系人，开始第一段加密对话。</string>
@@ -109,6 +118,7 @@
     <string name="infoplist_photos_usage">保存图片到相册需要此权限。</string>
     <string name="intake_action_open_app">打开陈仓</string>
     <string name="intake_already_in_thread">这条消息已经在对话里了</string>
+    <string name="intake_blocked">这条消息来自已拉黑的联系人，未显示</string>
     <string name="intake_error_cannot_decrypt">解不开。可能已经解过（看看和 TA 的对话），或者不是发给你的</string>
     <string name="intake_error_clipboard_empty">剪贴板里没有文字</string>
     <string name="intake_error_incomplete">没有选到完整的加密消息。请选中整条消息再试</string>
@@ -121,6 +131,7 @@
     <string name="invite_send_apk">直接发安装包</string>
     <string name="invite_send_link">发下载链接</string>
     <string name="invite_send_zip">以压缩包发送</string>
+    <string name="mail_copied_fallback">没有找到邮件 App，内容已复制，请发到 hi@allnationconnect.com</string>
     <string name="me_avatar_auto">自动</string>
     <string name="me_avatar_cd">我的头像，轻点修改</string>
     <string name="me_avatar_color">底色</string>
@@ -280,6 +291,7 @@
     <string name="scanner_photo_no_code">这张图里没有找到陈仓的二维码</string>
     <string name="scanner_pick_photo">从相册选</string>
     <string name="settings_about">关于</string>
+    <string name="settings_blocked_contacts">已拉黑的联系人</string>
     <string name="settings_danger">危险区</string>
     <string name="settings_erase_confirm">删除</string>
     <string name="settings_erase_confirm_body">此操作不可撤销。所有联系人、对话和身份将被清除。</string>

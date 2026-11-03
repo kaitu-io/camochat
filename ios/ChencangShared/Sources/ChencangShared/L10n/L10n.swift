@@ -98,6 +98,22 @@ public enum L10n {
         NSLocalizedString("app_name", bundle: .module, comment: "")
     }
 
+    public static var blockNotifyBody: String {
+        NSLocalizedString("block_notify_body", bundle: .module, comment: "")
+    }
+
+    public static var blockNotifySend: String {
+        NSLocalizedString("block_notify_send", bundle: .module, comment: "")
+    }
+
+    public static var blockNotifyTitle: String {
+        NSLocalizedString("block_notify_title", bundle: .module, comment: "")
+    }
+
+    public static var blockedEmpty: String {
+        NSLocalizedString("blocked_empty", bundle: .module, comment: "")
+    }
+
     public static func cardSendTo(_ name: String) -> String {
         String(format: NSLocalizedString("card_send_to", bundle: .module, comment: ""), locale: .current, name)
     }
@@ -234,6 +250,22 @@ public enum L10n {
         String(format: NSLocalizedString("contacts_badge_cd", bundle: .module, comment: ""), locale: .current, count)
     }
 
+    public static var contactsBlockConfirmBody: String {
+        NSLocalizedString("contacts_block_confirm_body", bundle: .module, comment: "")
+    }
+
+    public static var contactsBlockConfirmOk: String {
+        NSLocalizedString("contacts_block_confirm_ok", bundle: .module, comment: "")
+    }
+
+    public static var contactsBlockConfirmTitle: String {
+        NSLocalizedString("contacts_block_confirm_title", bundle: .module, comment: "")
+    }
+
+    public static var contactsBlockRow: String {
+        NSLocalizedString("contacts_block_row", bundle: .module, comment: "")
+    }
+
     public static var contactsClear: String {
         NSLocalizedString("contacts_clear", bundle: .module, comment: "")
     }
@@ -346,6 +378,10 @@ public enum L10n {
         NSLocalizedString("contacts_tab", bundle: .module, comment: "")
     }
 
+    public static var contactsUnblockRow: String {
+        NSLocalizedString("contacts_unblock_row", bundle: .module, comment: "")
+    }
+
     public static var conversationsAddCd: String {
         NSLocalizedString("conversations_add_cd", bundle: .module, comment: "")
     }
@@ -394,6 +430,10 @@ public enum L10n {
         NSLocalizedString("intake_already_in_thread", bundle: .module, comment: "")
     }
 
+    public static var intakeBlocked: String {
+        NSLocalizedString("intake_blocked", bundle: .module, comment: "")
+    }
+
     public static var intakeErrorCannotDecrypt: String {
         NSLocalizedString("intake_error_cannot_decrypt", bundle: .module, comment: "")
     }
@@ -440,6 +480,10 @@ public enum L10n {
 
     public static var inviteSendZip: String {
         NSLocalizedString("invite_send_zip", bundle: .module, comment: "")
+    }
+
+    public static var mailCopiedFallback: String {
+        NSLocalizedString("mail_copied_fallback", bundle: .module, comment: "")
     }
 
     public static var meAvatarAuto: String {
@@ -1044,6 +1088,10 @@ public enum L10n {
 
     public static var settingsAbout: String {
         NSLocalizedString("settings_about", bundle: .module, comment: "")
+    }
+
+    public static var settingsBlockedContacts: String {
+        NSLocalizedString("settings_blocked_contacts", bundle: .module, comment: "")
     }
 
     public static var settingsDanger: String {

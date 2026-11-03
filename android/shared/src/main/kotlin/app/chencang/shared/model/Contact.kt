@@ -31,6 +31,9 @@ enum class PairingState { PAIRED }
  *   contact (see `PairingTransport.inviteDigest`); it blocks a second handshake on
  *   the same invite for as long as the contact exists. Null for a contact created
  *   by completing my own invite, and for contacts stored by older builds.
+ * - [blocked] hides the contact and its conversation from the lists and drops its
+ *   incoming messages. Blocking never deletes the contact, session or history;
+ *   unblocking restores everything as it was. False for contacts stored by older builds.
  */
 @Serializable
 data class Contact(
@@ -44,6 +47,7 @@ data class Contact(
     @SerialName("session_state") val sessionState: ByteArray? = null,
     @SerialName("device_id") val deviceId: String? = null,
     @SerialName("accepted_invite_digest") val acceptedInviteDigest: String? = null,
+    @SerialName("blocked") val blocked: Boolean = false,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -61,6 +65,7 @@ data class Contact(
         } else if (other.sessionState != null) return false
         if (deviceId != other.deviceId) return false
         if (acceptedInviteDigest != other.acceptedInviteDigest) return false
+        if (blocked != other.blocked) return false
         return true
     }
 
@@ -75,6 +80,7 @@ data class Contact(
         result = 31 * result + (sessionState?.contentHashCode() ?: 0)
         result = 31 * result + (deviceId?.hashCode() ?: 0)
         result = 31 * result + (acceptedInviteDigest?.hashCode() ?: 0)
+        result = 31 * result + blocked.hashCode()
         return result
     }
 }

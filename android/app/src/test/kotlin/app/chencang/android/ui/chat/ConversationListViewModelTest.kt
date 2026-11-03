@@ -205,6 +205,28 @@ class ConversationListViewModelTest {
     }
 
     @Test
+    fun `a blocked contact has no row and does not count as a contact`() = runTest(dispatcher) {
+        // Production feeds the list from CcRepository.visibleContacts (CcNavGraph).
+        val repo = app.chencang.shared.CcRepository.forTest()
+        repo.upsertContact(contact("alice", at = 1L))
+        repo.setBlocked("fp-alice", true)
+        val latest = MutableStateFlow(listOf(ChatMessage("a", "alice", ChatMessage.DIRECTION_IN, "早", 100L)))
+        val vm = vm(contacts = repo.visibleContacts, latest = latest)
+        val seen = mutableListOf<List<ConversationListViewModel.Row>>()
+        val job = backgroundScope.launch { vm.rows.collect { seen += it } }
+        val job2 = backgroundScope.launch { vm.hasContactsOrPending.collect { } }
+        assertEquals(emptyList<ConversationListViewModel.Row>(), seen.last())
+        assertEquals(false, vm.hasContactsOrPending.value)
+
+        repo.setBlocked("fp-alice", false) // unblocking brings the conversation back as it was
+        val rows = vm.rows.filter { it.isNotEmpty() }.first()
+        assertEquals(listOf("alice"), rows.map { it.contact.username })
+        assertEquals("早", rows.single().last!!.body)
+        job.cancel()
+        job2.cancel()
+    }
+
+    @Test
     fun `unshared invite does not count as pending`() = runTest(dispatcher) {
         val vm = vm(invites = MutableStateFlow(listOf(invite("p1", sharedAt = null))))
         val job = backgroundScope.launch { vm.hasContactsOrPending.collect { } }
