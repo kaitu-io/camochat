@@ -60,6 +60,8 @@ final class MixinAppModel: ObservableObject {
     @Published var blockNoticeMail: ModerationMail.Mail?
     /// 没有邮件 App:草稿已复制,提示发到哪个地址。
     @Published var mailCopiedNotice = false
+    /// 「已复制」提示被点掉之后要接着做的事(举报后问是否拉黑)。
+    var afterMailCopiedDismissed: (() -> Void)?
     /// 拉黑 / 解除拉黑写入失败:根上弹一次「操作失败,请重试」。
     @Published var actionFailedNotice = false
 
@@ -212,8 +214,12 @@ final class MixinAppModel: ObservableObject {
     }
 
     /// 把草稿交给用户的邮件 App;没有邮件 App 时复制全文并提示。
-    func sendMail(_ mail: ModerationMail.Mail, openURL: OpenURLAction) {
-        MailLauncher.send(mail, openURL: openURL) { [weak self] in self?.mailCopiedNotice = true }
+    /// `then`:邮件 App 接手后立刻调用;没有邮件 App 时,等用户点掉「已复制」提示再调用(两个提示不同时出现)。
+    func sendMail(_ mail: ModerationMail.Mail, openURL: OpenURLAction, then: (() -> Void)? = nil) {
+        MailLauncher.send(mail, openURL: openURL, onAccepted: { then?() }) { [weak self] in
+            self?.afterMailCopiedDismissed = then
+            self?.mailCopiedNotice = true
+        }
     }
 
     /// 把 `ShellNav` 算出的导航快照落到界面状态。

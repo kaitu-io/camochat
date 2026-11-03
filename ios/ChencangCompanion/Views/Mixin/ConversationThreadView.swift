@@ -431,13 +431,12 @@ private struct ThreadContent: View {
     }
 
     /// 举报:把草稿交给用户的邮件 App(发不发由用户定),再问要不要顺手拉黑。
-    /// 稍等一下再弹,免得和「没有邮件 App、已复制」的提示叠在一起被 SwiftUI 吞掉。
+    /// 拉黑询问在邮件 App 接手后(或「已复制」提示点掉后)才弹,不和它叠。
     private func reportMessage(_ message: ChatMessage) {
         let mail = ModerationMail.report(
             displayName: contact?.displayName ?? "", fingerprintHex: peerId, message: message, now: Date(),
             appVersion: AppInfo.versionText(info: Bundle.main.infoDictionary))
-        model.sendMail(mail, openURL: openURL)
-        DispatchQueue.main.asyncAfter(deadline: .now() + Moyu.Motion.standard / 1000) { askBlockAfterReport = true }
+        model.sendMail(mail, openURL: openURL) { askBlockAfterReport = true }
     }
 
     private func blockAfterReport() {
@@ -567,7 +566,7 @@ private struct ThreadContent: View {
     }
 
     private var alertActive: Bool {
-        permissionAlert != nil || activity.notice != nil || vm.sendError != nil
+        permissionAlert != nil || activity.notice != nil || vm.sendError != nil || askBlockAfterReport
     }
 
     /// 别的模态都已收起才放行排队中的分享面板(见 `ThreadViewModel.setPresentationBlocked`)。

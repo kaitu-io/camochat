@@ -6,13 +6,16 @@ import ChencangShared
 /// 系统打不开 `mailto:`(没有邮件 App)时:整份草稿放进剪贴板(格式同 Android),由调用方提示发到哪个地址。
 @MainActor
 enum MailLauncher {
-    static func send(_ mail: ModerationMail.Mail, openURL: OpenURLAction, onCopied: @escaping @MainActor () -> Void) {
+    static func send(_ mail: ModerationMail.Mail, openURL: OpenURLAction, onAccepted: @escaping @MainActor () -> Void = {},
+                     onCopied: @escaping @MainActor () -> Void) {
         guard let url = mail.mailtoURL() else {
             copy(mail, onCopied: onCopied)
             return
         }
         openURL(url) { accepted in
-            if !accepted { copy(mail, onCopied: onCopied) }
+            Task { @MainActor in
+                if accepted { onAccepted() } else { copy(mail, onCopied: onCopied) }
+            }
         }
     }
 

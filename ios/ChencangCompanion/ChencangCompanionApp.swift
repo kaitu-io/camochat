@@ -170,7 +170,12 @@ private struct RootView: View {
                     Text(L10n.blockNotifyBody)
                 }
                 .alert(L10n.mailCopiedFallback, isPresented: $model.mailCopiedNotice) {
-                    Button(L10n.commonOk, role: .cancel) {}
+                    Button(L10n.commonOk, role: .cancel) {
+                        let next = model.afterMailCopiedDismissed
+                        model.afterMailCopiedDismissed = nil
+                        // 等本提示收起再接着弹,同一时刻叠两个提示 SwiftUI 会丢掉后一个。
+                        if let next { DispatchQueue.main.async { next() } }
+                    }
                 }
                 .alert(L10n.commonActionFailed, isPresented: $model.actionFailedNotice) {
                     Button(L10n.commonOk, role: .cancel) {}

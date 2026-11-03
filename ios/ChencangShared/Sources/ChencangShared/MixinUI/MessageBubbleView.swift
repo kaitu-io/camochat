@@ -79,6 +79,8 @@ public struct MessageBubbleView: View {
                 .background(isSelf ? Moyu.Palette.bubbleSelf : Moyu.Palette.bubblePeer, in: shape)
                 .overlay { if !isSelf { shape.strokeBorder(Moyu.Palette.borderHairline, lineWidth: 1) } }
                 .onTapGesture { if covered { revealed = true } }
+                .accessibilityHint(covered ? L10n.filteredCover : "")
+                .accessibilityAddTraits(covered ? .isButton : [])
                 .modifier(BubbleContextMenu(message: message, actions: actions))
                 .frame(maxWidth: Moyu.Size.bubbleMax, alignment: isSelf ? .trailing : .leading)
             statusLabel
