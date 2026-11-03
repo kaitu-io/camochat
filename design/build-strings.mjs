@@ -1,7 +1,7 @@
 // Generates the iOS + Android string resources from design/strings/{en,zh-Hans}.json.
 // Usage: node build-strings.mjs [--src <dir>] [--out <repo-root>]
 // Validation errors are all printed and the script exits 1 before writing anything.
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadLocales, validate } from './strings/lib.mjs';
@@ -45,6 +45,11 @@ for (const [lproj, locale] of [['en.lproj', en], ['zh-Hans.lproj', zh]]) {
   files[`ios/ChencangCompanion/Resources/${lproj}/InfoPlist.strings`] = renderInfoPlist(locale, 'app');
   files[`ios/ChencangAction/Resources/${lproj}/InfoPlist.strings`] = renderInfoPlist(locale, 'action');
 }
+
+// Moderation word list: copied verbatim from design/moderation/wordlist.txt.
+const wordlist = readFileSync(join(here, 'moderation', 'wordlist.txt'), 'utf8');
+files['android/shared/src/main/assets/moderation_wordlist.txt'] = wordlist;
+files[`${SHARED}/Resources/moderation_wordlist.txt`] = wordlist;
 
 for (const [rel, content] of Object.entries(files).sort(([a], [b]) => a.localeCompare(b))) {
   const path = join(out, rel);
