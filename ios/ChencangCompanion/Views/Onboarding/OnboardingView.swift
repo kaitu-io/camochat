@@ -105,22 +105,25 @@ private struct BrandActView: View {
                 Button {
                     viewModel.termsChecked.toggle()
                 } label: {
-                    Image(systemName: viewModel.termsChecked ? "checkmark.square.fill" : "square")
-                        .font(moyuFont(Moyu.FontSize.title))
-                        .foregroundStyle(viewModel.termsChecked ? Moyu.Palette.accentPrimary : Moyu.Palette.textSecondary)
+                    HStack(alignment: .top, spacing: Moyu.Space.s) {
+                        Image(systemName: viewModel.termsChecked ? "checkmark.square.fill" : "square")
+                            .font(moyuFont(Moyu.FontSize.title))
+                            .foregroundStyle(viewModel.termsChecked ? Moyu.Palette.accentPrimary : Moyu.Palette.textSecondary)
+                        Text(L10n.onboardingTermsAgree)
+                            .font(moyuFont(Moyu.FontSize.callout))
+                            .foregroundStyle(Moyu.Palette.textPrimary)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityElement(children: .ignore)
                 .accessibilityLabel(L10n.onboardingTermsAgree)
-                .accessibilityAddTraits(viewModel.termsChecked ? .isSelected : [])
-                VStack(alignment: .leading, spacing: Moyu.Space.xs) {
-                    Text(L10n.onboardingTermsAgree)
-                        .font(moyuFont(Moyu.FontSize.callout))
-                        .foregroundStyle(Moyu.Palette.textPrimary)
-                    Button(L10n.termsView) { showTerms = true }
-                        .font(moyuFont(Moyu.FontSize.callout))
-                        .tint(Moyu.Palette.accentPrimary)
-                }
+                .accessibilityAddTraits(viewModel.termsChecked ? [.isButton, .isSelected] : .isButton)
                 Spacer(minLength: 0)
+                Button(L10n.termsView) { showTerms = true }
+                    .font(moyuFont(Moyu.FontSize.callout))
+                    .tint(Moyu.Palette.accentPrimary)
             }
 
             Button {

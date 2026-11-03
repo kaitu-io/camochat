@@ -6,6 +6,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -101,7 +103,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel, siteUrl: String, onDone: ()
 }
 
 @Composable
-private fun BrandAct(
+internal fun BrandAct(
     state: OnboardingState,
     termsChecked: Boolean,
     onTermsCheckedChange: (Boolean) -> Unit,
@@ -146,12 +148,14 @@ private fun BrandAct(
             Spacer(Modifier.height(Moyu.Space.M))
             Text(stringResource(R.string.onboarding_generating), fontSize = Moyu.FontSize.Callout, color = moyuColors.textSecondary)
         } else {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Checkbox(
-                    checked = termsChecked,
-                    onCheckedChange = onTermsCheckedChange,
-                    modifier = Modifier.testTag(OnboardingTestTags.TERMS_CHECKBOX),
-                )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(value = termsChecked, role = Role.Checkbox, onValueChange = onTermsCheckedChange)
+                    .testTag(OnboardingTestTags.TERMS_CHECKBOX),
+            ) {
+                Checkbox(checked = termsChecked, onCheckedChange = null)
                 Text(
                     stringResource(R.string.onboarding_terms_agree),
                     fontSize = Moyu.FontSize.Caption,
