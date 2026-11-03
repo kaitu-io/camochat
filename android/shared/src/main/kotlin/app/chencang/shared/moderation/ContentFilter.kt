@@ -11,7 +11,7 @@ class ContentFilter(words: List<String>) {
     private val latinRegex: Regex?
 
     init {
-        val lowered = words.map { it.trim().lowercase() }.filter { it.isNotEmpty() }.distinct()
+        val lowered = words.map { normalize(it) }.filter { it.isNotEmpty() }.distinct()
         val (cjk, latin) = lowered.partition { w -> w.any { isCjk(it) } }
         cjkWords = cjk
         latinRegex = if (latin.isEmpty()) null else Regex(
@@ -21,13 +21,17 @@ class ContentFilter(words: List<String>) {
 
     fun isFlagged(text: String): Boolean {
         if (text.isEmpty()) return false
-        val t = text.lowercase()
+        val t = normalize(text)
         if (cjkWords.any { t.contains(it) }) return true
         return latinRegex?.containsMatchIn(t) == true
     }
 
     companion object {
         private const val ASSET = "moderation_wordlist.txt"
+
+        private val WS = Regex("\\s+")
+
+        private fun normalize(s: String): String = s.trim().lowercase().replace(WS, " ")
 
         private fun isCjk(c: Char): Boolean =
             Character.UnicodeScript.of(c.code) == Character.UnicodeScript.HAN

@@ -41,4 +41,15 @@ class ContentFilterTest {
         val first = ContentFilter.parse(raw).first()
         assertTrue(ContentFilter.fromAssets(ctx).isFlagged(first))
     }
+
+    @Test
+    fun `runs of whitespace are normalized`() {
+        assertTrue(ContentFilter(listOf("kill yourself")).isFlagged("kill   yourself"))
+    }
+
+    @Test
+    fun `shipped list does not flag ordinary words`() {
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        assertFalse(ContentFilter.fromAssets(ctx).isFlagged("个性交流"))
+    }
 }

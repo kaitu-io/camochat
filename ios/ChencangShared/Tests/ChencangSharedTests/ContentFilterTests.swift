@@ -28,4 +28,12 @@ final class ContentFilterTests: XCTestCase {
         let first = try XCTUnwrap(ContentFilter.parse(raw).first)
         XCTAssertTrue(ContentFilter.shared.isFlagged(first))
     }
+
+    func testWhitespaceRunsNormalized() {
+        XCTAssertTrue(ContentFilter(words: ["kill yourself"]).isFlagged("kill   yourself"))
+    }
+
+    func testShippedListDoesNotFlagOrdinaryWords() {
+        XCTAssertFalse(ContentFilter.shared.isFlagged("个性交流"))
+    }
 }
